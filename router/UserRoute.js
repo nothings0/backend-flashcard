@@ -1,0 +1,20 @@
+const UserController = require('../controller/UserController')
+const router = require('express').Router()
+const {verifyToken} = require('../middleware/index')
+
+
+router.post('/register', UserController.register)
+router.post('/login', UserController.login)
+router.get('/', UserController.getAllUser)
+router.put('/', verifyToken, UserController.updateAva)
+router.get('/:username', UserController.getUser)
+router.put('/user/:userId',verifyToken, UserController.updateUser)
+router.post('/refreshToken', UserController.reqRefreshToken)
+router.post('/forgotPassword', UserController.forgotPassword)
+router.put('/resetPassword', verifyToken, UserController.resetPassword)
+router.post('/logout', verifyToken, UserController.logout)
+router.post('/active', UserController.activeAccount)
+router.post('/contact', UserController.contactService)
+router.post('/google_login', UserController.loginGoogle)
+router.post('/facebook_login', UserController.loginFacebook)
+module.exports = router
