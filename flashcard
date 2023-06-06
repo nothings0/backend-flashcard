@@ -1,0 +1,28 @@
+// server {
+//  listen 80;
+//  server_name fluxquiz.com www.fluxquiz.com;
+
+// location / {
+//  root /var/www/flashcard/client;
+//  index  index.html index.htm;
+//  proxy_http_version 1.1;
+//  proxy_set_header Upgrade $http_upgrade;
+//  proxy_set_header Connection 'upgrade';
+//  proxy_set_header Host $host;
+//  proxy_cache_bypass $http_upgrade;
+//  try_files $uri $uri/ /index.html;
+// }
+// }
+
+// server {
+//   listen 80;
+//   server_name api.fluxquiz.com;
+//   location / {
+//     proxy_pass http://14.225.255.29:8000;
+//     proxy_http_version 1.1;
+//     proxy_set_header Upgrade $http_upgrade;
+//     proxy_set_header Connection 'upgrade';
+//     proxy_set_header Host $host;
+//     proxy_cache_bypass $http_upgrade;
+//     }
+// }

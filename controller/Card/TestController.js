@@ -16,22 +16,30 @@ const TestController = {
         const { limit } = Pagination(req)
         const {user} = req.query
         try {
-            const ticked = await TickMark.find({
-                $and: [
-                    {card: {$eq: mongoose.Types.ObjectId(cardId)}},
-                    {isTest: {$in: [user]}}
-                ]
-            }, {term: 1, _id: 0})
-            let tickedId = []
-            for (const item of ticked) {
-                tickedId.push(item.term)
+            let terms
+            if(user){
+                const ticked = await TickMark.find({
+                    $and: [
+                        {card: {$eq: mongoose.Types.ObjectId(cardId)}},
+                        {isTest: {$in: [user]}}
+                    ]
+                }, {term: 1, _id: 0})
+                let tickedId = []
+                for (const item of ticked) {
+                    tickedId.push(item.term)
+                }
+                terms = await Term.find({
+                    $and: [
+                        {cardId: {$eq: mongoose.Types.ObjectId(cardId)}},
+                        {_id: {$nin: tickedId}}
+                    ]
+                }).limit(limit)
+            }else{
+                terms = await Term.aggregate([
+                    { $match: {cardId: {$eq: mongoose.Types.ObjectId(cardId)}}}
+                    ,{ $sample: { size: limit } }
+                ])
             }
-            const terms = await Term.find({
-                $and: [
-                    {cardId: {$eq: mongoose.Types.ObjectId(cardId)}},
-                    {_id: {$nin: tickedId}}
-                ]
-            }).limit(limit)
             
             const arrCards = terms
             let length = arrCards.length
@@ -102,15 +110,7 @@ const TestController = {
                     await tickMark.save()
                 }
                 const achieve = await Achieve.findOne({user})
-                if(achieve){
-                    await achieve.updateOne({$inc: {achieveTest: 1}})
-                }else{
-                    const newAchieve = new Achieve({
-                        user,
-                        achieveTest: 1
-                    })
-                    await newAchieve.save()
-                }
+                await achieve.updateOne({$inc: {achieveTest: 1}})
             }
         } catch (err) {
             next(err)
@@ -124,17 +124,18 @@ const TestController = {
             const terms = await Term.find({ cardId })
             const arrCards = terms
             const {user} = req.body
-
             quesArr.forEach(item => {
                 let respon = {
                     check: false,
                     correctAnswer: "",
                     wrongAnswer: ""
                 }
-                let item2 = arrCards.find(e => e._id.valueOf() === item._id)
+                let item2 = arrCards.find(e => e._id.valueOf() == item._id)
                 if(item.type === 1){
                     if(item2.answer.toLowerCase() === item.answer.toLowerCase()){
-                        TestController.updateMardTest(item2._id, cardId, user, next)
+                        if(user){
+                            TestController.updateMardTest(item2._id, cardId, user, next)
+                        }
                         respon.check = true
                         respon.correctAnswer = item2.answer
                     }else{
@@ -144,7 +145,9 @@ const TestController = {
                     }
                 }else{
                     if(item2.prompt.toLowerCase().trim() === item.answer.toLowerCase().trim()){
-                        TestController.updateMardTest(item2._id, cardId, user, next)
+                        if(user){
+                            TestController.updateMardTest(item2._id, cardId, user, next)
+                        }
                         respon.check = true
                         respon.correctAnswer = item.answer
                     }else{

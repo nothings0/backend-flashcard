@@ -1,7 +1,7 @@
 const TickMark = require('../../model/TickMark')
 const Term = require('../../model/Term');
 const {shuffle} = require('../../util/shuffle');
-const { mongoose } = require('mongoose');
+const mongoose = require('mongoose');
 const Achieve = require('../../model/Achieve');
 
 const Pagination = (req) => {
@@ -16,22 +16,31 @@ const LearnController = {
         const {user} = req.query
         const { limit } = Pagination(req)
         try {
-            const ticked = await TickMark.find({
-                $and: [
-                    {card: {$eq: mongoose.Types.ObjectId(cardId)}},
-                    {isLearn: {$in: [user]}}
-                ]
-            }, {term: 1, _id: 0})
-            let tickedId = []
-            for (const item of ticked) {
-                tickedId.push(item.term)
+            let terms = []
+            if(user){
+                const ticked = await TickMark.find({
+                    $and: [
+                        {card: {$eq: mongoose.Types.ObjectId(cardId)}},
+                        {isLearn: {$in: [user]}}
+                    ]
+                }, {term: 1, _id: 0})
+                let tickedId = []
+                for (const item of ticked) {
+                    tickedId.push(item.term)
+                }
+                terms = await Term.find({
+                    $and: [
+                        {cardId: {$eq: mongoose.Types.ObjectId(cardId)}},
+                        {_id: {$nin: tickedId}}
+                    ]
+                }).limit(limit)
+            }else{
+                terms = await Term.aggregate([
+                    { $match: {cardId: {$eq: mongoose.Types.ObjectId(cardId)}}}
+                    ,{ $sample: { size: limit } }
+                ])
             }
-            const terms = await Term.find({
-                $and: [
-                    {cardId: {$eq: mongoose.Types.ObjectId(cardId)}},
-                    {_id: {$nin: tickedId}}
-                ]
-            }).limit(limit)
+
             const arrCards = terms
             let length = arrCards.length
             let newQuestion = []
@@ -93,15 +102,7 @@ const LearnController = {
                     await tickMark.save()
                 }
                 const achieve = await Achieve.findOne({user})
-                if(achieve){
-                    await achieve.updateOne({$inc: {achieveLearn: 1}})
-                }else{
-                    const newAchieve = new Achieve({
-                        user,
-                        achieveLearn: 1
-                    })
-                    await newAchieve.save()
-                }
+                await achieve.updateOne({$inc: {achieveLearn: 1}})
             }
         } catch (err) {
             next(err)

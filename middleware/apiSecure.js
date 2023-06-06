@@ -21,7 +21,7 @@ const apiSecure = async (req, res, next) => {
         if(signSever !== sign){
             return res.status(401).json({
                 status: 'error',
-                massage: 'bad request!'
+                massage: 'bad request!!'
             })
         }
         

@@ -5,6 +5,9 @@ const AchieveSchema = new mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: "User"
     },
+    target: {
+        type : Number , default : 100 
+    },
     achieveLearn: { 
         type : Number , default : 0 
     },

@@ -3,11 +3,10 @@ const User = require('../model/User')
 const Term = require('../model/Term')
 const Rate = require('../model/Rate')
 const CardSaved = require('../model/CardSaved')
-const fetch = require('node-fetch')
 
 // const {shuffle} = require('../util/shuffle')
 
-const { request, GraphQLClient, gql } = require('graphql-request')
+const { GraphQLClient, gql } = require('graphql-request')
 
 const Pagination = (req) => {
     let page = Number(req.query.page) * 1 || 1;
@@ -346,18 +345,8 @@ const CardController = {
     search: async (req, res, next) => {
         const query = req.params.q
         try {
-          const cards = await Card.find({
-            $or: [
-                {title: { $regex: query, $options: "i" }},
-                {description: { $regex: query, $options: "i" }},
-            ]
-          }).limit(5)
-          const users = await User.find({
-            $or: [
-                {name: { $regex: query, $options: "i" }},
-                {username: { $regex: query, $options: "i" }},
-            ]
-          }).limit(5)
+          const cards = await Card.find({$text:{$search: query}}).limit(5)
+          const users = await User.find({$text:{$search: query}}).limit(5)
           const data = [
             cards && {
                 title: 'Khóa học',
@@ -396,8 +385,10 @@ const CardController = {
     deleteCard: async(req, res, next) => {
         try {
             const {cardId} = req.params
+            const userId = req.user._id
             const card = await Card.findById(cardId)
-            if (card.user.valueOf() === req.body.userId){
+            const user = await User.findById(userId)
+            if (card.user.valueOf() === userId || user.isAdmin){
                 await card.deleteOne()
                 await Term.deleteMany({cardId})
                 res.status(200).json({
