@@ -26,7 +26,7 @@ app.use(cookies());
 // app.use(
 //   cors({ origin: "https://backend-kfnn.onrender.com", credentials: true })
 // );
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
 // app.use(cors()); //
 app.use(express.json({}));
 app.use(morgan("common"));
