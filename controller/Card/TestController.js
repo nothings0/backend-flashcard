@@ -3,6 +3,10 @@ const Achieve = require("../../model/Achieve");
 const Term = require("../../model/Term");
 const TickMark = require("../../model/TickMark");
 const { shuffle } = require("../../util/shuffle");
+const Rep = require("../../model/Rep");
+
+const MAX_REP = 3;
+const ARRAY_REP = [0, 30, 24 * 60];
 
 const Pagination = (req) => {
   let limit = Number(req.query.limit) * 1 || 10;
@@ -53,10 +57,12 @@ const TestController = {
           prompt: "",
           answer: [] || "",
           _id: "",
+          card: "",
           type: 1,
         };
         ques.type = Math.ceil(Math.random() * 3);
         ques._id = arrCards[i]._id;
+        ques.card = arrCards[i].cardId;
         if (ques.type === 1) {
           ques.prompt = arrCards[i].prompt;
           let correctAnswer = {
@@ -125,11 +131,10 @@ const TestController = {
     }
   },
   getMarkTest: async (req, res, next) => {
-    const { cardId } = req.params;
     const quesArr = req.body.ques;
     let responArr = [];
     try {
-      const terms = await Term.find({ cardId });
+      const terms = await Term.find({ cardId: quesArr[0].card });
       const arrCards = terms;
       const { user } = req.body;
       quesArr.forEach((item) => {
@@ -139,10 +144,10 @@ const TestController = {
           wrongAnswer: "",
         };
         let item2 = arrCards.find((e) => e._id.valueOf() == item._id);
-        if (item.type === 1) {
+        if (item.type === "learn" || item.type === 1) {
           if (item2.answer.toLowerCase() === item.answer.toLowerCase()) {
             if (user) {
-              TestController.updateMardTest(item2._id, cardId, user, next);
+              TestController.handleRep(item2._id, item.card, user, next);
             }
             respon.check = true;
             respon.correctAnswer = item2.answer;
@@ -157,7 +162,7 @@ const TestController = {
             item.answer.toLowerCase().trim()
           ) {
             if (user) {
-              TestController.updateMardTest(item2._id, cardId, user, next);
+              TestController.handleRep(item2._id, item.card, user, next);
             }
             respon.check = true;
             respon.correctAnswer = item.answer;
@@ -171,6 +176,108 @@ const TestController = {
       });
 
       return res.status(200).json(responArr);
+    } catch (err) {
+      next(err);
+    }
+  },
+  handleRep: async (term, card, user, next) => {
+    try {
+      if (!user) {
+        return;
+      }
+      const rep = await Rep.findOne({ term: mongoose.Types.ObjectId(term) });
+      if (!rep) {
+        const newRep = new Rep({
+          term,
+          status: 1,
+          user,
+        });
+        await newRep.save();
+      } else {
+        const newStatus = rep.status + 1;
+        if (newStatus < MAX_REP) {
+          const newDateRep = new Date(
+            Date.now() + ARRAY_REP[newStatus] * 60 * 1000
+          );
+          await rep.updateOne({
+            $set: { status: newStatus, dateRep: newDateRep },
+          });
+        } else {
+          await rep.deleteOne();
+          TestController.updateMardTest(term, card, user, next);
+        }
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
+  getSpaceRepTest: async (req, res, next) => {
+    const { limit } = Pagination(req);
+    const user = req.user._id;
+    try {
+      if (!user) return;
+      const currentDate = new Date();
+      const reps = await Rep.find({
+        $and: [{ dateRep: { $lt: currentDate } }, { user: user }],
+      }).limit(limit);
+
+      let repsId = [];
+      for (const item of reps) {
+        repsId.push(item.term);
+      }
+      const terms = await Term.find({ _id: { $in: repsId } });
+
+      const arrCards = terms;
+      let length = arrCards.length;
+      let newQuestion = [];
+
+      for (let i = 0; i < length; i++) {
+        let ques = {
+          prompt: "",
+          answer: [] || "",
+          _id: "",
+          card: "",
+          type: reps[i].type,
+        };
+        ques._id = arrCards[i]._id;
+        ques.card = arrCards[i].cardId;
+        if (ques.type === "learn") {
+          ques.prompt = arrCards[i].prompt;
+          let correctAnswer = {
+            answerTxt: "",
+            answerId: "",
+          };
+          correctAnswer.answerTxt = arrCards[i].answer;
+          correctAnswer.answerId = arrCards[i]._id;
+          ques.answer.push(correctAnswer);
+          const terms2 = await Term.aggregate([
+            {
+              $match: {
+                _id: { $ne: arrCards[i]._id },
+              },
+            },
+            { $sample: { size: 3 } },
+          ]);
+          for (let j = 0; j < 3; j++) {
+            let answerItem = {
+              answerTxt: "",
+              answerId: "",
+            };
+            answerItem.answerTxt = terms2[j].answer;
+            answerItem.answerId = terms2[j]._id;
+            ques.answer.push(answerItem);
+          }
+          shuffle(ques.answer);
+        } else if (ques.type === "listen") {
+          ques.prompt = arrCards[i].prompt;
+          ques.answer = arrCards[i].answer;
+        } else if (ques.type === "write") {
+          ques.answer = arrCards[i].answer;
+        }
+        newQuestion.push(ques);
+      }
+      shuffle(newQuestion);
+      res.status(200).json({ question: newQuestion });
     } catch (err) {
       next(err);
     }

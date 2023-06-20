@@ -9,8 +9,8 @@ const jwt = require("jsonwebtoken");
 const client = require("../helper/connectRedis");
 const sendMail = require("../helper/sendMail");
 const jwt_decode = require("jwt-decode");
-const { OAuth2Client } = require("google-auth-library");
 const fetch = require("node-fetch");
+const { OAuth2Client } = require("google-auth-library");
 
 const OAuthClient = new OAuth2Client(`${process.env.CLIENT_ID}`);
 
@@ -172,10 +172,15 @@ const UserController = {
         { isAdmin: 0, password: 0 }
       );
       const cards = await Card.find({ user: user._id }).limit(4);
-      const achieve = await Achieve.findOne(
+      let achieve = await Achieve.findOne(
         { user: user._id },
         { user: 0, _id: 0 }
       );
+      if (!achieve) {
+        const newAchieve = new Achieve({ user: user._id });
+        await newAchieve.save();
+        achieve = newAchieve;
+      }
       const achieveRes = {
         achieveArr: [
           {

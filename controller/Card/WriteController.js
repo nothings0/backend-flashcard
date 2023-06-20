@@ -6,6 +6,10 @@ const {
   calculateAccuracy,
   generateWordHint,
 } = require("../../util/supportMark");
+const Rep = require("../../model/Rep");
+
+const MAX_REP = 5;
+const ARRAY_REP = [0, 7, 24 * 60, 3 * 24 * 60, 7 * 24 * 60];
 
 const Pagination = (req) => {
   let limit = Number(req.query.limit) * 1 || 10;
@@ -83,6 +87,42 @@ const WriteController = {
       next(err);
     }
   },
+  handleRep: async (term, card, user, next) => {
+    try {
+      if (!user) {
+        return;
+      }
+      const rep = await Rep.findOne({
+        $and: [{ term: mongoose.Types.ObjectId(term) }, { type: "write" }],
+      });
+      if (!rep) {
+        // console.log("vao day");
+        const newRep = new Rep({
+          term,
+          status: 1,
+          user,
+          type: "write",
+        });
+        await newRep.save();
+      } else {
+        // console.log("vao day 2");
+        const newStatus = rep.status + 1;
+        if (newStatus < MAX_REP) {
+          const newDateRep = new Date(
+            Date.now() + ARRAY_REP[newStatus] * 60 * 1000
+          );
+          await rep.updateOne({
+            $set: { status: newStatus, dateRep: newDateRep },
+          });
+        } else {
+          await rep.deleteOne();
+          WriteController.updateMardLearn(term, card, user, next);
+        }
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
   getMarkWrite: async (req, res, next) => {
     const { cardId } = req.params;
     const { answer, id } = req.body.ques;
@@ -97,7 +137,8 @@ const WriteController = {
       const percent = calculateAccuracy(item.prompt, answer);
       if (percent > 95.0) {
         const { user } = req.body;
-        WriteController.updateMardWrite(item._id, cardId, user, next);
+
+        WriteController.handleRep(item._id, cardId, user, next);
         respon.check = true;
       } else {
         respon.check = false;

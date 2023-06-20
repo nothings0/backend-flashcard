@@ -9,17 +9,24 @@ const MatchCardController = require("../controller/Card/MatchCard");
 const router = require("express").Router();
 
 router.route("/library").get(verifyToken, CardController.getCardInUser);
+router
+  .route("/user")
+  .get(verifyToken, CardController.getCardsOfUser)
+  .post(verifyToken, CardController.AddCardExtension);
 
 router
   .route("/")
   .get(CardController.getAllCard)
   .post(verifyToken, CardController.createCard);
+router
+  .route("/extension")
+  .post(verifyToken, CardController.createCardExtension);
 
 router
   .route("/adminall")
   .get(verifyAdmin, CardController.getAllCards)
   .post(verifyAdmin, CardController.createCardAdmin);
-
+router.route("/term").delete(CardController.deleteTerm);
 router
   .route("/:cardId")
   .get(CardController.getCardById)
@@ -41,6 +48,9 @@ router
   .get(LearnController.getLearn)
   .post(LearnController.getMarkLearn);
 // router test
+router
+  .route("/test/repettion")
+  .get(verifyToken, TestController.getSpaceRepTest);
 router
   .route("/test/:cardId")
   .get(TestController.getTest)

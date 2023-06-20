@@ -18,14 +18,12 @@ const SectionRoute = require("./router/Board/SectionRoute");
 const TaskRoute = require("./router/Board/TaskRoute");
 
 const NotifiRoute = require("./router/NotifiRoute");
+const ActiveRoute = require("./router/ActiveRoute");
 
 const apiSecure = require("./middleware/apiSecure");
 
 const app = express();
 app.use(cookies());
-// app.use(
-//   cors({ origin: "https://backend-kfnn.onrender.com", credentials: true })
-// );
 app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
 // app.use(cors()); //
 app.use(express.json({}));
@@ -40,6 +38,7 @@ app.use(
 app.use("/v1/auth", UserRoute);
 app.use("/v1/card", CardRoute);
 app.use("/v1/notification", NotifiRoute);
+app.use("/v1/active", ActiveRoute);
 
 app.use("/v1/board", apiSecure, BoardRoute);
 app.use("/v1/section", apiSecure, SectionRoute);
