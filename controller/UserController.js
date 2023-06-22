@@ -368,7 +368,7 @@ const UserController = {
         const newAchieve = new Achieve({ user: newUser._id });
         await newAchieve.save();
         const notifi = new Notification({
-          content: "Chào mừng bạn đến với fluxquiz.com",
+          content: "Chào mừng bạn đến với fluxquiz",
           user: newUser._id,
         });
         await notifi.save();
@@ -415,7 +415,7 @@ const UserController = {
         const newAchieve = new Achieve({ user: newUser._id });
         await newAchieve.save();
         const notifi = new Notification({
-          content: "Chào mừng bạn đến với fluxquiz.com",
+          content: "Chào mừng bạn đến với fluxquiz",
           user: newUser._id,
         });
         await notifi.save();
@@ -477,7 +477,7 @@ const registerUser = async (newUser, res) => {
   const newAchieve = new Achieve({ user: user._id });
   await newAchieve.save();
   const notifi = new Notification({
-    content: "Chào mừng bạn đến với FLUXQUIZ.COM",
+    content: "Chào mừng bạn đến với fluxquiz",
     user: user._id,
   });
   await notifi.save();
