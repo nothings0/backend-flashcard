@@ -11,7 +11,7 @@ require("./helper/connectRedis");
 
 app.use(
   cors({
-    origin: ["https://fluxquiz.netlify.app", "http://localhost:3000"],
+    origin: ["http://localhost:3000", "https://fluxquiz.netlify.app"],
     credentials: true,
   })
 );
