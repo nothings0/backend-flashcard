@@ -8,10 +8,11 @@ const cookies = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 dotenv.config();
 require("./helper/connectRedis");
+const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://fluxquiz.netlify.app"],
+    origin: ["http://localhost:3000"],
     credentials: true,
   })
 );
@@ -29,7 +30,6 @@ const ActiveRoute = require("./router/ActiveRoute");
 
 const apiSecure = require("./middleware/apiSecure");
 
-const app = express();
 app.use(cookies());
 // app.use(cors({ origin: "*", credentials: true })); //
 app.use(express.json({}));
