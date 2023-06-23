@@ -11,8 +11,8 @@ const router = require("express").Router();
 router.route("/library").get(verifyToken, CardController.getCardInUser);
 router
   .route("/user")
-  .get(verifyToken, CardController.getCardsOfUser)
-  .post(verifyToken, CardController.AddCardExtension);
+  .get(verifyToken, cors({ origin: "*" }), CardController.getCardsOfUser)
+  .post(verifyToken, cors({ origin: "*" }), CardController.AddCardExtension);
 
 router
   .route("/")
