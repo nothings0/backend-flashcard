@@ -41,17 +41,8 @@ app.use(
   })
 );
 
-const noCors = (req, res, next) => {
-  // Xóa các header CORS
-  res.removeHeader("Access-Control-Allow-Origin");
-  res.removeHeader("Access-Control-Allow-Methods");
-  res.removeHeader("Access-Control-Allow-Headers");
-  console.log("aaaaa");
-  next();
-};
-
 app.use("/v1/auth", UserRoute);
-app.use("/v1/card", noCors, CardRoute);
+app.use("/v1/card", cors({ origin: "https://chat.openai.com" }), CardRoute);
 app.use("/v1/notification", NotifiRoute);
 app.use("/v1/active", ActiveRoute);
 
