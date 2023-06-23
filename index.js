@@ -12,7 +12,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "/^https:/",
+    origin: "https://fluxquiz.netlify.app",
     credentials: true,
   })
 );
