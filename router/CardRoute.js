@@ -7,6 +7,7 @@ const ListenController = require("../controller/Card/ListenController");
 const { verifyToken, verifyAdmin } = require("../middleware/index");
 const MatchCardController = require("../controller/Card/MatchCard");
 const router = require("express").Router();
+const cors = require("cors");
 
 router.route("/library").get(verifyToken, CardController.getCardInUser);
 router
