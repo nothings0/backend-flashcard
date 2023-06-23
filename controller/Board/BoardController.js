@@ -6,12 +6,16 @@ const { sortOrder } = require("../../util");
 const BoardController = {
   create: async (req, res, next) => {
     const userId = req.user._id;
-    const { data } = req.body;
+    const { title } = req.body;
     try {
       const boardUser = await Board.find({ user: userId });
-      if (boardUser)
+      if (boardUser.length > 0)
         return res.status(409).json({ msg: "board already exists" });
-      await BoardController.createBoard(data, userId);
+      const newBoard = new Board({
+        title,
+        user: userId,
+      });
+      await newBoard.save();
       res.status(201).json({ msg: "create board success!!!" });
     } catch (err) {
       next(err);

@@ -313,6 +313,9 @@ const CardController = {
   },
   AddCardExtension: async (req, res, next) => {
     try {
+      res.removeHeader("Access-Control-Allow-Origin");
+      res.removeHeader("Access-Control-Allow-Methods");
+      res.removeHeader("Access-Control-Allow-Headers");
       const { card, prompt, answer } = req.body;
       let termCount = await Term.find({ cardId: card }).count();
       const newTerm = new Term({
@@ -639,13 +642,13 @@ const CardController = {
   },
   deleteTerm: async (req, res, next) => {
     try {
-      const {cardId} = req.body
-      await Term.deleteMany({cardId})
-      return res.status(200).json({msg: "delete success!!!!"})
+      const { cardId } = req.body;
+      await Term.deleteMany({ cardId });
+      return res.status(200).json({ msg: "delete success!!!!" });
     } catch (error) {
-      next(error)
+      next(error);
     }
-  }
+  },
 };
 
 module.exports = CardController;
