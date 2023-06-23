@@ -9,7 +9,12 @@ const fileUpload = require("express-fileupload");
 dotenv.config();
 require("./helper/connectRedis");
 
-app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
+app.use(
+  cors({
+    origin: ["https://fluxquiz.netlify.app", "http://localhost:3000"],
+    credentials: true,
+  })
+);
 
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
