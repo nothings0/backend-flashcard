@@ -25,7 +25,7 @@ const apiSecure = require("./middleware/apiSecure");
 const app = express();
 app.use(cookies());
 // app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
-app.use(cors()); //
+app.use(cors({ origin: "*" })); //
 app.use(express.json({}));
 app.use(morgan("common"));
 // app.use(bodyParser.json({ limit: "50mb" }));
