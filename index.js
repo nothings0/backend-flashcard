@@ -9,6 +9,8 @@ const fileUpload = require("express-fileupload");
 dotenv.config();
 require("./helper/connectRedis");
 
+app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
+
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
 const OpenaiRoute = require("./router/OpenaiRoute");
@@ -24,7 +26,6 @@ const apiSecure = require("./middleware/apiSecure");
 
 const app = express();
 app.use(cookies());
-app.use(cors({ origin: "https://fluxquiz.netlify.app", credentials: true }));
 // app.use(cors({ origin: "*", credentials: true })); //
 app.use(express.json({}));
 app.use(morgan("common"));
