@@ -17,6 +17,7 @@ const OAuthClient = new OAuth2Client(`${process.env.CLIENT_ID}`);
 // const CLIENT_URL = "http://localhost:3000"
 const CLIENT_URL = "https://fluxquiz.com";
 const cloudinary = require("cloudinary");
+const BoardController = require("./Board/BoardController");
 
 cloudinary.config({
   cloud_name: "da9mt0m3u",
@@ -470,7 +471,61 @@ const loginUser = async (user, password, res) => {
     return res.status(200).json({ user: userPL, accessToken });
   }
 };
-
+const dataBoard = {
+  board: {
+    title: "Sắp xếp thời gian học tập!!!",
+    user: "admin",
+  },
+  sections: [
+    {
+      tasks: [
+        {
+          content: "Ghi nhớ từ vựng công nghệ thông tin",
+          time: "2023-06-22T12:06:59.960Z",
+        },
+        {
+          content: "Luyện nghe tiếng anh trên video youtube ...",
+          time: "2023-06-22T12:06:59.960Z",
+        },
+        {
+          content: "Kiểm tra ghi nhớ từ vựng",
+          time: "2023-06-22T12:06:59.960Z",
+        },
+        {
+          content: "Ghi nhớ từ vựng công nghệ thông tin ...",
+          time: "2023-06-22T12:06:59.960Z",
+        },
+      ],
+      title: "Việc làm",
+    },
+    {
+      tasks: [
+        {
+          content: "Ghi nhớ từ vựng công nghệ thông tin ...",
+          time: "2023-06-22T12:06:59.960Z",
+        },
+      ],
+      title: "Đang làm",
+    },
+    {
+      tasks: [
+        {
+          content: "Kiểm tra xong",
+          time: "2023-06-22T12:06:59.961Z",
+        },
+        {
+          content: "Đã xong",
+          time: "2023-06-22T12:06:59.961Z",
+        },
+        {
+          content: "Nhớ 40 / 60 từ",
+          time: "2023-06-22T12:06:59.961Z",
+        },
+      ],
+      title: "Hoàn thành",
+    },
+  ],
+};
 const registerUser = async (newUser, res) => {
   const user = new User(newUser);
   await user.save();
@@ -481,6 +536,7 @@ const registerUser = async (newUser, res) => {
     user: user._id,
   });
   await notifi.save();
+  await BoardController.createBoard(dataBoard, user._id);
   res.status(201).json({ msg: "Đăng ký tài khoản thành công!", code: 201 });
 };
 
