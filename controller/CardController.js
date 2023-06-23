@@ -322,6 +322,7 @@ const CardController = {
         position: termCount > 0 ? termCount : 0,
       });
       await newTerm.save();
+      res.set("Referrer-Policy", "no-referrer");
       res.status(200).json({ msg: "success!!!!" });
     } catch (error) {
       next(error);
