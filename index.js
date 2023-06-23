@@ -42,7 +42,7 @@ app.use(
 );
 
 app.use("/v1/auth", UserRoute);
-app.use("/v1/card", CardRoute);
+app.use("/v1/card", cors({ origin: "*" }), CardRoute);
 app.use("/v1/notification", NotifiRoute);
 app.use("/v1/active", ActiveRoute);
 
