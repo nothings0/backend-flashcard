@@ -313,9 +313,6 @@ const CardController = {
   },
   AddCardExtension: async (req, res, next) => {
     try {
-      res.removeHeader("Access-Control-Allow-Origin");
-      res.removeHeader("Access-Control-Allow-Methods");
-      res.removeHeader("Access-Control-Allow-Headers");
       const { card, prompt, answer } = req.body;
       let termCount = await Term.find({ cardId: card }).count();
       const newTerm = new Term({
