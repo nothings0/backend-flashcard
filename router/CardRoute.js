@@ -8,11 +8,18 @@ const { verifyToken, verifyAdmin } = require("../middleware/index");
 const MatchCardController = require("../controller/Card/MatchCard");
 const router = require("express").Router();
 
+const corsMiddleware = (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+};
+
 router.route("/library").get(verifyToken, CardController.getCardInUser);
 router
   .route("/user")
-  .get(verifyToken, CardController.getCardsOfUser)
-  .post(verifyToken, CardController.AddCardExtension);
+  .get(corsMiddleware, verifyToken, CardController.getCardsOfUser)
+  .post(corsMiddleware, verifyToken, CardController.AddCardExtension);
 
 router
   .route("/")
