@@ -15,7 +15,7 @@ const { OAuth2Client } = require("google-auth-library");
 const OAuthClient = new OAuth2Client(`${process.env.CLIENT_ID}`);
 
 // const CLIENT_URL = "http://localhost:3000"
-const CLIENT_URL = "https://fluxquiz.com";
+const CLIENT_URL = "https://fluxquiz.netlify.app";
 const cloudinary = require("cloudinary");
 const BoardController = require("./Board/BoardController");
 

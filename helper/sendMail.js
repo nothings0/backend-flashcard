@@ -26,7 +26,7 @@ const sendMail = async (to, url, type) => {
       const result = await transporter.sendMail({
         from: "<sp.fluxquiz@gmail.com>",
         to: to,
-        subject: "ĐĂNG KÝ TÀI KHOẢN - FLUXQUIZ.COM",
+        subject: "ĐĂNG KÝ TÀI KHOẢN - FLUXQUIZ",
         html: `
                   <div style="max-width: 700px; margin:auto; border: 10px solid #349eff; padding: 50px 20px; font-size: 110%;">
                   <h2 style="text-align: center; text-transform: uppercase;color: #349eff;">WElCOME to FLUXQUIZ.COM</h2>
@@ -41,7 +41,7 @@ const sendMail = async (to, url, type) => {
                   <div>${url}</div>
                   </div>
     
-                  <p>From <a href="https://fluxquiz.com">Fluxquiz.com</a> With Love</p>
+                  <p>From <a href="https://fluxquiz.netlify.app">Fluxquiz</a> With Love</p>
                 `,
       });
       return result;
@@ -49,7 +49,7 @@ const sendMail = async (to, url, type) => {
       const result = await transporter.sendMail({
         from: "<sp.fluxquiz@gmail.com>",
         to: to,
-        subject: "QUÊN MẬT KHẨU - FLUXQUIZ.COM",
+        subject: "QUÊN MẬT KHẨU - FLUXQUIZ",
         html: `
                   <div style="max-width: 700px; margin:auto; border: 10px solid #349eff; padding: 50px 20px; font-size: 110%;">
                   <h2 style="text-align: center; text-transform: uppercase;color: #349eff;">WElCOME to FLUXQUIZ.COM</h2>
@@ -63,7 +63,7 @@ const sendMail = async (to, url, type) => {
                   <div>${url}</div>
                   </div>
     
-                  <p>From <a href="https://fluxquiz.com">Fluxquiz.com</a> With Love</p>
+                  <p>From <a href="https://fluxquiz.netlify.app">Fluxquiz.netlify.app</a> With Love</p>
                 `,
       });
       return result;
@@ -71,17 +71,17 @@ const sendMail = async (to, url, type) => {
       const result = await transporter.sendMail({
         from: "<sp.fluxquiz@gmail.com>",
         to: to,
-        subject: `THÔNG BÁO - FLUXQUIZ.COM`,
+        subject: `THÔNG BÁO - FLUXQUIZ`,
         html: `
                   <div style="max-width: 700px; margin:auto; border: 10px solid #349eff; padding: 50px 20px; font-size: 110%;">
                   <h2 style="text-align: center; text-transform: uppercase;color: #349eff;">WElCOME to FLUXQUIZ.COM</h2>
                   <p>
-                    Liên hệ từ FLUXQUIZ.COM
+                    Liên hệ từ FLUXQUIZ
                   </p>
                   <p>${url}</p>
                   </div>
     
-                  <p>From <a href="https://fluxquiz.com">Fluxquiz.com</a> With Love</p>
+                  <p>From <a href="https://fluxquiz.netlify.app">Fluxquiz.netlify.app</a> With Love</p>
                 `,
       });
       return result;

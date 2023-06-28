@@ -2,7 +2,7 @@ const Section = require("../../model/Board/Section");
 const Task = require("../../model/Board/Task");
 const schedule = require("node-schedule");
 const Notification = require("../../model/Notification");
-
+const mongoose = require("mongoose");
 const TaskController = {
   create: async (req, res, next) => {
     const { sectionId, taskContent, taskTime } = req.body;
@@ -36,7 +36,6 @@ const TaskController = {
   update: async (req, res, next) => {
     const { taskId } = req.params;
     const { content, time } = req.body;
-    const date = new Date(time);
     const userId = req.user._id;
     try {
       await Task.findByIdAndUpdate(
@@ -44,7 +43,7 @@ const TaskController = {
         {
           $set: {
             content,
-            time: date,
+            time,
           },
         },
         { new: true }
@@ -54,7 +53,7 @@ const TaskController = {
       if (existingJob) {
         existingJob.cancel();
       }
-      schedule.scheduleJob(taskId.toString(), date, async () => {
+      schedule.scheduleJob(taskId.toString(), time, async () => {
         const contentNoti = `you have work up to now: ${time}: ${content}`;
         const notifi = new Notification({ content: contentNoti, user: userId });
         await notifi.save();
@@ -66,15 +65,19 @@ const TaskController = {
   },
 
   delete: async (req, res, next) => {
-    const { taskId } = req.params;
+    const { taskId, sectionId } = req.body;
+    console.log(taskId, sectionId);
     try {
-      const currentTask = await Task.findByIdAndDelete(taskId);
-      await Section.findByIdAndUpdate(currentTask.section, {
-        $pull: {
-          taskOrder: currentTask._id,
-        },
-      });
-      res.status(200).json({ msg: "deleted" });
+      await Task.findByIdAndDelete(taskId);
+      await Section.findOneAndUpdate(
+        { _id: mongoose.Types.ObjectId(sectionId) },
+        {
+          $pull: {
+            taskOrder: taskId,
+          },
+        }
+      ),
+        res.status(200).json({ msg: "deleted" });
     } catch (err) {
       next(err);
     }
@@ -83,18 +86,29 @@ const TaskController = {
   updatePosition: async (req, res, next) => {
     const { taskOrder, sectionId, sectionIdAdded, taskId } = req.body;
     try {
-      if (sectionIdAdded) {
+      if (sectionIdAdded !== sectionId) {
         await Task.findByIdAndUpdate(taskId, {
           $set: {
             section: sectionIdAdded,
           },
         });
       }
-      await Section.findByIdAndUpdate(sectionId, {
-        $set: {
-          taskOrder,
-        },
-      });
+      const sectionPromise = Promise.all([
+        Section.findByIdAndUpdate(sectionIdAdded, {
+          $set: {
+            taskOrder,
+          },
+        }),
+        Section.findOneAndUpdate(
+          { _id: mongoose.Types.ObjectId(sectionId) },
+          {
+            $pull: {
+              taskOrder: taskId,
+            },
+          }
+        ),
+      ]);
+      await sectionPromise;
       res.status(200).json({ msg: "update success" });
     } catch (err) {
       next(err);

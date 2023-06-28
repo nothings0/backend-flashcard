@@ -12,10 +12,14 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://fluxquiz.netlify.app",
+    origin: [
+      "https://fluxquiz.netlify.app",
+      "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
+    ],
     credentials: true,
   })
 );
+// app.use(cors({ origin: "*", credentials: true })); //
 
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
@@ -31,7 +35,6 @@ const ActiveRoute = require("./router/ActiveRoute");
 const apiSecure = require("./middleware/apiSecure");
 
 app.use(cookies());
-// app.use(cors({ origin: "*", credentials: true })); //
 app.use(express.json({}));
 app.use(morgan("common"));
 // app.use(bodyParser.json({ limit: "50mb" }));

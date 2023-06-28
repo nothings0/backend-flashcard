@@ -3,7 +3,7 @@ const User = require("../model/User");
 const Term = require("../model/Term");
 const Rate = require("../model/Rate");
 const CardSaved = require("../model/CardSaved");
-
+const fetch = require("node-fetch");
 // const {shuffle} = require('../util/shuffle')
 
 const { GraphQLClient, gql } = require("graphql-request");
@@ -315,14 +315,21 @@ const CardController = {
     try {
       const { card, prompt, answer } = req.body;
       let termCount = await Term.find({ cardId: card }).count();
+      const newAnswer = await fetch(
+        `https://api.mymemory.translated.net/get?q=${prompt}&langpair=en|vi`
+      );
+      const newAnswer2 = await newAnswer.json();
+      const translate = newAnswer2.matches.sort(
+        (a, b) => b["usage-count"] - a["usage-count"]
+      );
       const newTerm = new Term({
         prompt: prompt,
-        answer: answer,
+        answer: translate[0].translation,
         cardId: card,
         position: termCount > 0 ? termCount : 0,
       });
       await newTerm.save();
-      res.status(200).json({ msg: "success!!!!" });
+      res.status(200).json({ msg: "success!!!!", type: "success" });
     } catch (error) {
       next(error);
     }
