@@ -34,7 +34,7 @@ const sendMail = async (to, url, type) => {
                   Chào mừng!. Bạn hãy nhấp vào nút bên dưới để xác thực địa chỉ email của bạn."
                   </p>
                   
-                  <a href=${url} style="background: crimson; text-decoration: none; color: white; padding: 10px 20px; margin: 10px 0; display: inline-block;">Xác thực địa chỉ email</a>
+                  <a href="${url}" style="background: crimson; text-decoration: none; color: white; padding: 10px 20px; margin: 10px 0; display: inline-block;">Xác thực địa chỉ email</a>
               
                   <p>Nếu nút không hoạt động vì bất kỳ lý do gì, bạn cũng có thể nhấp vào liên kết bên dưới để xác thực</p>
               
@@ -56,7 +56,7 @@ const sendMail = async (to, url, type) => {
                   <p>Bạn hãy nhấp vào nút bên dưới để tiến hành lấy lại mật khẩu fluxquiz.com 
                   </p>
                   
-                  <a href=${url} style="background: crimson; text-decoration: none; color: white; padding: 10px 20px; margin: 10px 0; display: inline-block;">Lấy lại mật khẩu fluxquiz.com</a>
+                  <a href="${url}" style="background: crimson; text-decoration: none; color: white; padding: 10px 20px; margin: 10px 0; display: inline-block;">Lấy lại mật khẩu fluxquiz</a>
               
                   <p>Nếu nút không hoạt động vì bất kỳ lý do gì, bạn cũng có thể nhấp vào liên kết bên dưới để xác thực</p>
               
