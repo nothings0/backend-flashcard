@@ -10,16 +10,19 @@ dotenv.config();
 require("./helper/connectRedis");
 const app = express();
 
-app.use(
-  cors({
-    origin: [
-      "https://fluxquiz.netlify.app",
-      "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
-    ],
-    credentials: true,
-  })
-);
-// app.use(cors({ origin: "*", credentials: true })); //
+if (process.env.NODE_ENV === "development") {
+  app.use(cors({ origin: "*", credentials: true })); //
+} else {
+  app.use(
+    cors({
+      origin: [
+        "https://fluxquiz.netlify.app",
+        "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
+      ],
+      credentials: true,
+    })
+  );
+}
 
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");

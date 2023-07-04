@@ -282,7 +282,7 @@ const UserController = {
           .json({ msg: "Tài khoản không tồn tại!", code: 400 });
       }
       const access_token = UserController.generateAccessToken(user);
-      const url = `${CLIENT_URL}/reset-password/${access_token}`;
+      const url = `${CLIENT_URL}/user/reset-password/${access_token}`;
       sendMail(email, url, "forgotpassword");
       return res.status(200).json({
         msg: "Vui lòng kiểm tra email của bạn để tiến hành lấy lại mật khẩu",
