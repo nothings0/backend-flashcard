@@ -56,6 +56,7 @@ const WriteController = {
         let ques = {
           answer: term.answer,
           _id: term._id,
+          l: term.prompt.length,
         };
         newQuestion.push(ques);
       }

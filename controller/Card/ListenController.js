@@ -54,6 +54,7 @@ const ListenController = {
         let ques = {
           prompt: term.prompt,
           answer: term.answer,
+          l: term.prompt.length,
           _id: term._id,
         };
         newQuestion.push(ques);

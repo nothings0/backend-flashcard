@@ -45,6 +45,7 @@ const ActiveController = {
   },
   getAchieve: async (req, res, next) => {
     try {
+      const { limit } = req.query;
       const count = await User.aggregate([
         {
           $lookup: {
@@ -83,7 +84,7 @@ const ActiveController = {
           },
         },
         {
-          $limit: 5,
+          $limit: limit * 1,
         },
       ]);
       res.status(200).json(count);
@@ -93,6 +94,7 @@ const ActiveController = {
   },
   getRankLearn: async (req, res, next) => {
     try {
+      const { limit } = req.query;
       const count = await User.aggregate([
         {
           $lookup: {
@@ -115,7 +117,7 @@ const ActiveController = {
           },
         },
         {
-          $limit: 5,
+          $limit: limit * 1,
         },
       ]);
       res.status(200).json(count);
