@@ -6,20 +6,14 @@ const FlashCardController = require("../controller/Card/FlashCardController");
 const ListenController = require("../controller/Card/ListenController");
 const { verifyToken, verifyAdmin } = require("../middleware/index");
 const MatchCardController = require("../controller/Card/MatchCard");
+const ProLearnController = require("../controller/Card/ProLearnController");
 const router = require("express").Router();
-
-const corsMiddleware = (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-};
 
 router.route("/library").get(verifyToken, CardController.getCardInUser);
 router
   .route("/user")
-  .get(corsMiddleware, verifyToken, CardController.getCardsOfUser)
-  .post(corsMiddleware, verifyToken, CardController.AddCardExtension);
+  .get(verifyToken, CardController.getCardsOfUser)
+  .post(verifyToken, CardController.AddCardExtension);
 
 router
   .route("/")
@@ -35,47 +29,48 @@ router
   .post(verifyAdmin, CardController.createCardAdmin);
 router.route("/term").delete(CardController.deleteTerm);
 router
-  .route("/:cardId")
+  .route("/:slug")
   .get(CardController.getCardById)
   .delete(verifyToken, CardController.deleteCard)
   .patch(verifyToken, CardController.updateCard)
   .post(verifyToken, CardController.savedCard);
-
-router.route("/view/:cardId").put(CardController.addView);
+router.route("/updateSlug/:slug").put(CardController.CreateSlug);
+router.route("/view/:slug").put(CardController.addView);
 
 router.route("/search/:q").get(CardController.search);
 
-router.route("/rate/:cardId").post(verifyToken, CardController.rateCard);
+router.route("/rate/:slug").post(verifyToken, CardController.rateCard);
 
 // router flash card
-router.route("/flashcard/:cardId").get(FlashCardController.getFlashCard);
+router.route("/flashcard/:slug").get(FlashCardController.getFlashCard);
 // router learn
 router
-  .route("/learn/:cardId")
+  .route("/learn/:slug")
   .get(LearnController.getLearn)
   .post(LearnController.getMarkLearn);
 // router test
 router
   .route("/test/repettion")
   .get(verifyToken, TestController.getSpaceRepTest);
+router.route("/test/pro2/:slug").get(verifyToken, ProLearnController.getPro);
 router
-  .route("/test/:cardId")
+  .route("/test/:slug")
   .get(TestController.getTest)
   .post(TestController.getMarkTest);
 // router write
 router.route("/write/suggest").get(WriteController.suggest);
 router
-  .route("/write/:cardId")
+  .route("/write/:slug")
   .get(WriteController.getWrite)
   .post(WriteController.getMarkWrite);
 // router listen
 router
-  .route("/listen/:cardId")
+  .route("/listen/:slug")
   .get(ListenController.getListen)
   .post(ListenController.getMarkListen);
 // router match
 router
-  .route("/match/:cardId")
+  .route("/match/:slug")
   .get(MatchCardController.getMatchCard)
   .put(MatchCardController.updateMatchCard)
   .post(MatchCardController.updateAndGet);

@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Term = require("../../model/Term");
 const TickMark = require("../../model/TickMark");
 const { shuffle } = require("../../util/shuffle");
+const Card = require("../../model/Card");
 
 const Pagination = (req) => {
   let limit = Number(req.query.limit) * 1 || 10;
@@ -11,15 +12,19 @@ const Pagination = (req) => {
 
 const MatchCardController = {
   getMatchCard: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { user } = req.query;
     const { limit } = Pagination(req);
     try {
       let termArr = [];
+      const card = await Card.findOne({ slug: slug });
       if (user) {
         const ticked = await TickMark.find(
           {
-            $and: [{ card: { $eq: cardId } }, { isMatch: { $in: [user] } }],
+            $and: [
+              { card: { $eq: mongoose.Types.ObjectId(card._id) } },
+              { isMatch: { $in: [user] } },
+            ],
           },
           { term: 1, _id: 0 }
         );
@@ -30,7 +35,7 @@ const MatchCardController = {
         termArr = await Term.find(
           {
             $and: [
-              { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+              { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
               { _id: { $nin: tickedId } },
             ],
           },
@@ -38,7 +43,7 @@ const MatchCardController = {
         ).limit(limit);
       } else {
         termArr = await Term.aggregate([
-          { $match: { cardId: { $eq: mongoose.Types.ObjectId(cardId) } } },
+          { $match: { cardId: { $eq: mongoose.Types.ObjectId(card._id) } } },
           { $sample: { size: limit } },
         ]);
       }
@@ -67,8 +72,9 @@ const MatchCardController = {
   },
   updateMatchCard: async (req, res, next) => {
     const { user, terms } = req.body;
-    const { cardId } = req.params;
+    const { slug } = req.params;
     try {
+      const card = await Card.findOne({ slug });
       if (user) {
         for (const item of terms) {
           const termTick = await TickMark.findOne({ term: item.id });
@@ -78,7 +84,7 @@ const MatchCardController = {
             }
           } else {
             const tickMark = new TickMark({
-              card: cardId,
+              card: card._id,
               term: item.id,
               isMatch: [user],
             });
@@ -95,10 +101,11 @@ const MatchCardController = {
   },
   updateAndGet: async (req, res, next) => {
     const { user, terms } = req.body;
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { limit } = Pagination(req);
     try {
       let termArr;
+      const card = await Card.findOne({ slug });
       if (user) {
         for (const item of terms) {
           const termTick = await TickMark.findOne({ term: item.id });
@@ -108,7 +115,7 @@ const MatchCardController = {
             }
           } else {
             const tickMark = new TickMark({
-              card: cardId,
+              card: card._id,
               term: item.id,
               isMatch: [user],
             });
@@ -117,7 +124,10 @@ const MatchCardController = {
         }
         const ticked = await TickMark.find(
           {
-            $and: [{ card: { $eq: cardId } }, { isMatch: { $in: [user] } }],
+            $and: [
+              { card: { $eq: mongoose.Types.ObjectId(card._id) } },
+              { isMatch: { $in: [user] } },
+            ],
           },
           { term: 1, _id: 0 }
         );
@@ -128,7 +138,7 @@ const MatchCardController = {
         termArr = await Term.find(
           {
             $and: [
-              { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+              { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
               { _id: { $nin: tickedId } },
             ],
           },

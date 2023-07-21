@@ -21,9 +21,11 @@ const ActiveController = {
         Rep.find({
           $and: [{ updatedAt: { $gte: start, $lt: end } }, { user: userId }],
         }).count(),
+        Rep.find().count(),
       ]);
-      const [prepareCount, outDateCount, todayCount] = await countPromise;
-      const maxCount = Math.max(prepareCount, outDateCount, todayCount);
+      const [prepareCount, outDateCount, todayCount, allCount] =
+        await countPromise;
+      const maxCount = allCount;
       const response = [
         {
           text: "Ôn tập",
@@ -36,6 +38,10 @@ const ActiveController = {
         {
           text: "Đã học hôm nay",
           data: todayCount,
+        },
+        {
+          text: "Đã học",
+          data: allCount,
         },
       ];
       return res.status(200).json({ data: response, max: maxCount });

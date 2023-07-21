@@ -9,10 +9,7 @@ const fileUpload = require("express-fileupload");
 dotenv.config();
 require("./helper/connectRedis");
 const app = express();
-
-if (process.env.NODE_ENV === "development") {
-  app.use(cors({ origin: "*", credentials: true })); //
-} else {
+if (process.env.NODE_ENV !== "development") {
   app.use(
     cors({
       origin: [
@@ -22,6 +19,8 @@ if (process.env.NODE_ENV === "development") {
       credentials: true,
     })
   );
+} else {
+  app.use(cors({ origin: "http://localhost:3000", credentials: true })); //
 }
 
 const UserRoute = require("./router/UserRoute");

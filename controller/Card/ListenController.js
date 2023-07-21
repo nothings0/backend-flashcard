@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const Achieve = require("../../model/Achieve");
 const { calculateAccuracy } = require("../../util/supportMark");
 const Rep = require("../../model/Rep");
+const Card = require("../../model/Card");
 
 const MAX_REP = 5;
 const ARRAY_REP = [0, 7, 24 * 60, 3 * 24 * 60, 7 * 24 * 60];
@@ -17,33 +18,65 @@ const Pagination = (req) => {
 const ListenController = {
   getListen: async (req, res, next) => {
     const { user } = req.query;
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { limit } = Pagination(req);
     try {
       let terms = [];
+      const card = await Card.findOne({ slug });
       if (user) {
-        const ticked = await TickMark.find(
-          {
-            $and: [
-              { card: { $eq: mongoose.Types.ObjectId(cardId) } },
-              { isListen: { $in: [user] } },
-            ],
-          },
-          { term: 1, _id: 0 }
-        );
-        let tickedId = [];
-        for (const item of ticked) {
-          tickedId.push(item.term);
+        const currentDate = new Date();
+        const termRepPromise = Promise.all([
+          Rep.find({
+            $and: [{ dateRep: { $lt: currentDate } }, { type: "listen" }],
+          }).limit(limit),
+          Rep.find({
+            $and: [{ dateRep: { $gt: currentDate } }, { type: "listen" }],
+          }),
+        ]);
+        const [termRep, termRepNot] = await termRepPromise;
+        let termRepId = [];
+        for (const item of termRep) {
+          termRepId.push(item.term);
         }
-        terms = await Term.find({
+        const newTerms = await Term.find({
           $and: [
-            { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
-            { _id: { $nin: tickedId } },
+            { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
+            { _id: { $in: termRepId } },
           ],
-        }).limit(limit);
+        });
+        terms = newTerms;
+        const termRepLength = newTerms.length;
+        const newLimit = limit - termRepLength;
+        if (newLimit > 0) {
+          // tìm tất cả các term đã học xong
+          const ticked = await TickMark.find(
+            {
+              $and: [
+                { card: { $eq: mongoose.Types.ObjectId(card._id) } },
+                { isLearn: { $in: [user] } },
+              ],
+            },
+            { term: 1, _id: 0 }
+          );
+          let tickedId = [];
+          for (const item of termRepNot) {
+            tickedId.push(item.term);
+          }
+          for (const item of ticked) {
+            tickedId.push(item.term);
+          }
+          const tickedTerms = await Term.find({
+            $and: [
+              { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
+              { _id: { $nin: tickedId } },
+            ],
+          }).limit(newLimit);
+          const arrTerms = [...terms, ...tickedTerms];
+          terms = arrTerms;
+        }
       } else {
         terms = await Term.aggregate([
-          { $match: { cardId: { $eq: mongoose.Types.ObjectId(cardId) } } },
+          { $match: { cardId: { $eq: mongoose.Types.ObjectId(card._id) } } },
           { $sample: { size: limit } },
         ]);
       }
@@ -96,16 +129,15 @@ const ListenController = {
         $and: [{ term: mongoose.Types.ObjectId(term) }, { type: "listen" }],
       });
       if (!rep) {
-        // console.log("vao day");
         const newRep = new Rep({
           term,
           status: 1,
           user,
           type: "listen",
+          card,
         });
         await newRep.save();
       } else {
-        // console.log("vao day 2");
         const newStatus = rep.status + 1;
         if (newStatus < MAX_REP) {
           const newDateRep = new Date(
@@ -124,7 +156,7 @@ const ListenController = {
     }
   },
   getMarkListen: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { answer, id } = req.body.ques;
     let respon = {
       check: false,
@@ -133,11 +165,12 @@ const ListenController = {
       percent: 0,
     };
     try {
+      const card = await Card.findOne({ slug });
       const item = await Term.findOne({ _id: id });
       const percent = calculateAccuracy(item.prompt, answer);
       if (percent > 95.0) {
         const { user } = req.body;
-        ListenController.handleRep(item._id, cardId, user, next);
+        ListenController.handleRep(item._id, card._id, user, next);
         respon.check = true;
         respon.correctAnswer = item.prompt;
         respon.percent = percent;

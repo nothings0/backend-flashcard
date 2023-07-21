@@ -4,6 +4,7 @@ const Rep = require("../../model/Rep");
 const { shuffle } = require("../../util/shuffle");
 const mongoose = require("mongoose");
 const Achieve = require("../../model/Achieve");
+const Card = require("../../model/Card");
 
 const MAX_REP = 6;
 const ARRAY_REP = [0, 7, 30, 24 * 60, 3 * 24 * 60, 7 * 24 * 60];
@@ -16,18 +17,14 @@ const Pagination = (req) => {
 
 const LearnController = {
   getLearn: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { user } = req.query;
     const { limit } = Pagination(req);
     try {
       let terms = [];
-      // console.log(user);
+      const card = await Card.findOne({ slug: slug });
       if (user) {
         const currentDate = new Date();
-        // const termRep = await Rep.find({ dateRep: { $lt: currentDate } }).limit(
-        //   limit
-        // );
-        // const termRepNot = await Rep.find({ dateRep: { $gt: currentDate } });
         const termRepPromise = Promise.all([
           Rep.find({
             $and: [{ dateRep: { $lt: currentDate } }, { type: "learn" }],
@@ -37,19 +34,16 @@ const LearnController = {
           }),
         ]);
         const [termRep, termRepNot] = await termRepPromise;
-        // console.log("termRef", termRep.length);
-        // console.log("termRepNot", termRepNot.length);
         let termRepId = [];
         for (const item of termRep) {
           termRepId.push(item.term);
         }
         const newTerms = await Term.find({
           $and: [
-            { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+            { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
             { _id: { $in: termRepId } },
           ],
         });
-        // console.log("newTerm", newTerms.length);
         terms = newTerms;
         const termRepLength = newTerms.length;
         const newLimit = limit - termRepLength;
@@ -58,7 +52,7 @@ const LearnController = {
           const ticked = await TickMark.find(
             {
               $and: [
-                { card: { $eq: mongoose.Types.ObjectId(cardId) } },
+                { card: { $eq: mongoose.Types.ObjectId(card._id) } },
                 { isLearn: { $in: [user] } },
               ],
             },
@@ -71,20 +65,18 @@ const LearnController = {
           for (const item of ticked) {
             tickedId.push(item.term);
           }
-          // console.log(tickedId);
           const tickedTerms = await Term.find({
             $and: [
-              { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+              { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
               { _id: { $nin: tickedId } },
             ],
           }).limit(newLimit);
           const arrTerms = [...terms, ...tickedTerms];
           terms = arrTerms;
         }
-        // if the limit is not enough, follow the steps below
       } else {
         terms = await Term.aggregate([
-          { $match: { cardId: { $eq: mongoose.Types.ObjectId(cardId) } } },
+          { $match: { cardId: { $eq: mongoose.Types.ObjectId(card._id) } } },
           { $sample: { size: limit } },
         ]);
       }
@@ -111,7 +103,7 @@ const LearnController = {
           {
             $match: {
               $and: [
-                { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+                { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
                 { _id: { $ne: arrCards[i]._id } },
               ],
             },
@@ -175,6 +167,8 @@ const LearnController = {
           term,
           status: 1,
           user,
+          card,
+          type: "learn",
         });
         await newRep.save();
       } else {
@@ -197,7 +191,7 @@ const LearnController = {
     }
   },
   getMarkLearn: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { answer, id } = req.body.ques;
 
     let respon = {
@@ -206,10 +200,11 @@ const LearnController = {
       wrongAnswer: "",
     };
     try {
+      const card = await Card.findOne({ slug });
       const item = await Term.findOne({ _id: id });
       if (item.answer.toLowerCase() === answer.toLowerCase()) {
         const { user } = req.body;
-        LearnController.handleRep(item._id, cardId, user, next);
+        LearnController.handleRep(item._id, card._id, user, next);
         respon.check = true;
         respon.correctAnswer = answer;
       } else {

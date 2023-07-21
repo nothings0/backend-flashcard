@@ -4,6 +4,7 @@ const Term = require("../model/Term");
 const Rate = require("../model/Rate");
 const CardSaved = require("../model/CardSaved");
 const fetch = require("node-fetch");
+const slugify = require("slugify");
 // const {shuffle} = require('../util/shuffle')
 
 const { GraphQLClient, gql } = require("graphql-request");
@@ -21,7 +22,7 @@ const CardController = {
     try {
       const { title, description, share, background, term } = req.body;
       const userId = req.user._id;
-      CardController.handleCreate(
+      await CardController.handleCreate(
         title,
         description,
         share,
@@ -48,15 +49,21 @@ const CardController = {
     next
   ) => {
     try {
+      const lastThreeChars = Math.random().toString(36).slice(-3);
+      const slug = slugify(title + " " + lastThreeChars, {
+        lower: true,
+        strict: true,
+      });
       const newCard = new Card({
         title,
         description,
         share,
         background,
         user: userId,
+        slug,
       });
       await newCard.save();
-      let termCount = await Term.find({ cardId: newCard._id }).count();
+      let termCount = await Term.find({ slug: newCard.slug }).count();
       let terms = [];
       for (let i = 0; i < term.length; i++) {
         const termItem = {
@@ -81,11 +88,11 @@ const CardController = {
       if (!card) {
         CardController.handleCreate(title, "", true, "", term, userId, next);
       } else {
-        let termCount = await Term.find({ cardId: card._id }).count();
+        let termCount = await Term.find({ slug: card.slug }).count();
         const newTerm = new Term({
           prompt: term[0].prompt,
           answer: term[0].answer,
-          cardId: card._id,
+          slug: card.slug,
           position: termCount > 0 ? termCount : 0,
         });
         await newTerm.save();
@@ -230,6 +237,7 @@ const CardController = {
             views: 1,
             user: { username: 1 },
             _id: 1,
+            slug: 1,
           },
         },
         { $sample: { size: limit } },
@@ -313,7 +321,7 @@ const CardController = {
   },
   AddCardExtension: async (req, res, next) => {
     try {
-      const { card, prompt, answer } = req.body;
+      const { card, prompt } = req.body;
       let termCount = await Term.find({ cardId: card }).count();
       const newAnswer = await fetch(
         `https://api.mymemory.translated.net/get?q=${prompt}&langpair=en|vi`
@@ -335,19 +343,16 @@ const CardController = {
     }
   },
   getCardById: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { limit, skip } = Pagination(req);
     try {
-      const cards = await Card.findOne({ _id: cardId }).populate(
-        "user",
-        "username"
-      );
-      const terms = await Term.find({ cardId })
+      const cards = await Card.findOne({ slug }).populate("user", "username");
+      const terms = await Term.find({ cardId: cards._id })
         .sort({ position: 1 })
         .skip(skip)
         .limit(limit);
-      const count = await Term.find({ cardId }).count();
-      const rateCard = await Rate.find({ card: cardId });
+      const count = await Term.find({ cardId: cards._id }).count();
+      const rateCard = await Rate.find({ card: cards._id });
       let sum = 0;
       for (const r of rateCard) {
         sum += r.rate;
@@ -370,16 +375,16 @@ const CardController = {
     }
   },
   updateCard: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const termArr = req.body.card.term;
     try {
-      const card = await Card.findById(cardId);
-      const terms = await Term.find({ cardId: cardId }).sort({ position: 1 });
+      const card = await Card.findOne({ slug });
+      const terms = await Term.find({ cardId: card._id }).sort({ position: 1 });
       if (card.user.valueOf() === req.body.userId) {
         try {
           await card.update({ $set: req.body.card });
 
-          let termCount = await Term.find({ cardId: cardId }).count();
+          let termCount = await Term.find({ cardId: card._id }).count();
 
           for (let i = 0; i < termArr.length; i++) {
             if (terms[i]) {
@@ -399,7 +404,7 @@ const CardController = {
               const newTerm = new Term({
                 prompt: termArr[i].prompt,
                 answer: termArr[i].answer,
-                cardId: cardId,
+                cardId: card._id,
                 position: termCount > 0 ? termCount : 0,
               });
               await newTerm.save();
@@ -424,18 +429,21 @@ const CardController = {
     }
   },
   savedCard: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const userId = req.user._id;
     try {
-      const cardSaved = await CardSaved.findOne({ card: cardId, user: userId });
+      const card = await Card.findOne({ slug: slug });
+      const cardSaved = await CardSaved.findOne({
+        card: card._id,
+        user: userId,
+      });
       if (cardSaved)
         return res.status(200).json({ code: 200, msg: "Đã được lưu trước đó" });
-      const card = await Card.findById(cardId);
       if (card.user.valueOf() === userId)
         return res
           .status(400)
           .json({ code: 400, msg: "Bạn chỉ được lưu học phần người khác" });
-      const newCardSaved = new CardSaved({ card: cardId, user: userId });
+      const newCardSaved = new CardSaved({ card: card._id, user: userId });
       await newCardSaved.save();
       res.status(200).json({ code: 200, msg: "Lưu thành công" });
     } catch (err) {
@@ -443,11 +451,14 @@ const CardController = {
     }
   },
   addView: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     try {
-      await Card.findByIdAndUpdate(cardId, {
-        $inc: { views: 1 },
-      });
+      await Card.findOneAndUpdate(
+        { slug },
+        {
+          $inc: { views: 1 },
+        }
+      );
       res.status(200).json("The view has been increased.");
     } catch (err) {
       next(err);
@@ -474,21 +485,29 @@ const CardController = {
     }
   },
   rateCard: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { rateNum } = req.body;
     const userId = req.user._id;
     try {
-      const rate = await Rate.findOne({ card: cardId, user: userId });
+      const card = await Card.findOne({ slug });
+      const rate = await Rate.findOne({ card: card._id, user: userId });
       if (!rate) {
-        const newRate = new Rate({ card: cardId, rate: rateNum, user: userId });
-        await newRate.save();
-        await Card.findByIdAndUpdate(cardId, {
-          $inc: { "rate.total": 1, "rate.quantity": rateNum },
+        const newRate = new Rate({
+          card: card._id,
+          rate: rateNum,
+          user: userId,
         });
+        await newRate.save();
+        await Card.findOneAndUpdate(
+          { slug },
+          {
+            $inc: { "rate.total": 1, "rate.quantity": rateNum },
+          }
+        );
       } else {
         let inc = rateNum - rate.rate;
         await rate.updateOne({ $set: { rate: rateNum } });
-        await Card.findByIdAndUpdate(cardId, {
+        await Card.findByIdAndUpdate(card._id, {
           $inc: { "rate.quantity": inc },
         });
       }
@@ -499,13 +518,13 @@ const CardController = {
   },
   deleteCard: async (req, res, next) => {
     try {
-      const { cardId } = req.params;
+      const { slug } = req.params;
       const userId = req.user._id;
-      const card = await Card.findById(cardId);
+      const card = await Card.findOne({ slug });
       const user = await User.findById(userId);
       if (card.user.valueOf() === userId || user.isAdmin) {
         await card.deleteOne();
-        await Term.deleteMany({ cardId });
+        await Term.deleteMany({ cardId: card._id });
         res.status(200).json({
           type: "success",
           msg: "Xóa thành công",
@@ -646,13 +665,30 @@ const CardController = {
   },
   deleteTerm: async (req, res, next) => {
     try {
-      const { cardId } = req.body;
-      await Term.deleteMany({ cardId });
+      const { slug } = req.body;
+      const card = await Card.findOne({ slug });
+      await Term.deleteMany({ cardId: card._id });
       return res.status(200).json({ msg: "delete success!!!!" });
     } catch (error) {
       next(error);
     }
   },
+  CreateSlug: async (req, res, next) => {
+    try {
+      // const { slug } = req.params;
+      const cards = await Card.find();
+      for (const card of cards) {
+        const lastThreeChars = card._id.valueOf().slice(-3);
+        const slug = slugify(card.title + " " + lastThreeChars, {
+          lower: true,
+          strict: true,
+        });
+        await card.updateOne({ slug });
+      }
+      return res.status(200).json("update success");
+    } catch (error) {
+      next(error);
+    }
+  },
 };
-
 module.exports = CardController;

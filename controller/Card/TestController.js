@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Achieve = require("../../model/Achieve");
 const Term = require("../../model/Term");
+const Card = require("../../model/Card");
 const TickMark = require("../../model/TickMark");
 const { shuffle } = require("../../util/shuffle");
 const Rep = require("../../model/Rep");
@@ -16,16 +17,17 @@ const Pagination = (req) => {
 
 const TestController = {
   getTest: async (req, res, next) => {
-    const { cardId } = req.params;
+    const { slug } = req.params;
     const { limit } = Pagination(req);
     const { user } = req.query;
     try {
       let terms;
+      const card = await Card.findOne({ slug: slug });
       if (user) {
         const ticked = await TickMark.find(
           {
             $and: [
-              { card: { $eq: mongoose.Types.ObjectId(cardId) } },
+              { card: { $eq: mongoose.Types.ObjectId(card._id) } },
               { isTest: { $in: [user] } },
             ],
           },
@@ -37,13 +39,13 @@ const TestController = {
         }
         terms = await Term.find({
           $and: [
-            { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+            { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
             { _id: { $nin: tickedId } },
           ],
         }).limit(limit);
       } else {
         terms = await Term.aggregate([
-          { $match: { cardId: { $eq: mongoose.Types.ObjectId(cardId) } } },
+          { $match: { cardId: { $eq: mongoose.Types.ObjectId(card._id) } } },
           { $sample: { size: limit } },
         ]);
       }
@@ -59,6 +61,7 @@ const TestController = {
           _id: "",
           card: "",
           type: 1,
+          l: 0,
         };
         ques.type = Math.ceil(Math.random() * 3);
         ques._id = arrCards[i]._id;
@@ -76,7 +79,7 @@ const TestController = {
             {
               $match: {
                 $and: [
-                  { cardId: { $eq: mongoose.Types.ObjectId(cardId) } },
+                  { cardId: { $eq: mongoose.Types.ObjectId(card._id) } },
                   { _id: { $ne: arrCards[i]._id } },
                 ],
               },
@@ -96,8 +99,10 @@ const TestController = {
         } else if (ques.type === 2) {
           ques.prompt = arrCards[i].prompt;
           ques.answer = arrCards[i].answer;
+          ques.l = arrCards[i].prompt.length;
         } else {
           ques.answer = arrCards[i].answer;
+          ques.l = arrCards[i].prompt.length;
         }
         newQuestion.push(ques);
       }
@@ -134,16 +139,14 @@ const TestController = {
     const quesArr = req.body.ques;
     let responArr = [];
     try {
-      const terms = await Term.find({ cardId: quesArr[0].card });
-      const arrCards = terms;
       const { user } = req.body;
-      quesArr.forEach((item) => {
+      for (const item of quesArr) {
         let respon = {
           check: false,
           correctAnswer: "",
           wrongAnswer: "",
         };
-        let item2 = arrCards.find((e) => e._id.valueOf() == item._id);
+        let item2 = await Term.findOne({ cardId: item.card });
         if (item.type === "learn" || item.type === 1) {
           if (item2.answer.toLowerCase() === item.answer.toLowerCase()) {
             if (user) {
@@ -173,8 +176,7 @@ const TestController = {
           }
         }
         responArr.push(respon);
-      });
-
+      }
       return res.status(200).json(responArr);
     } catch (err) {
       next(err);
@@ -191,6 +193,8 @@ const TestController = {
           term,
           status: 1,
           user,
+          card,
+          type: "test",
         });
         await newRep.save();
       } else {
@@ -238,6 +242,7 @@ const TestController = {
           _id: "",
           card: "",
           type: reps[i].type,
+          l: 0,
         };
         ques._id = arrCards[i]._id;
         ques.card = arrCards[i].cardId;
@@ -271,8 +276,10 @@ const TestController = {
         } else if (ques.type === "listen") {
           ques.prompt = arrCards[i].prompt;
           ques.answer = arrCards[i].answer;
+          ques.l = arrCards[i].prompt.length;
         } else if (ques.type === "write") {
           ques.answer = arrCards[i].answer;
+          ques.l = arrCards[i].prompt.length;
         }
         newQuestion.push(ques);
       }

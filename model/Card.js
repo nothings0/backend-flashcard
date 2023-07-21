@@ -1,43 +1,50 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
-const CardSchema = new mongoose.Schema({
+const CardSchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: true,
-        default: ""
+      type: String,
+      required: true,
+      default: "",
     },
     description: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
+    },
+    slug: {
+      type: String,
+      default: "",
     },
     user: {
-        type: mongoose.Types.ObjectId,
-        required: true,
-        ref: "User"
+      type: mongoose.Types.ObjectId,
+      required: true,
+      ref: "User",
     },
     share: {
-        type: Boolean,
-        required: true,
-        default: true,
+      type: Boolean,
+      required: true,
+      default: true,
     },
     views: {
-        type: Number,
-        default: 5,
+      type: Number,
+      default: 5,
     },
     background: {
-        type: String,
-        default: '',
+      type: String,
+      default: "",
     },
     rate: {
-        total: {
-            type: Number,
-            default: 0
-        },
-        quantity: {
-            type: Number,
-            default: 0
-        }
-    }
-}, {timestamps: true})
+      total: {
+        type: Number,
+        default: 0,
+      },
+      quantity: {
+        type: Number,
+        default: 0,
+      },
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Card", CardSchema)
+module.exports = mongoose.model("Card", CardSchema);
