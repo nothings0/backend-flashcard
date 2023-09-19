@@ -13,7 +13,6 @@
   "author": "nothings0",
   "license": "ISC",
   "dependencies": {
-    "@vitalets/google-translate-api": "^9.2.0",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.20.0",
     "cloudinary": "^1.31.0",

@@ -27,14 +27,23 @@ router
   .route("/adminall")
   .get(verifyAdmin, CardController.getAllCards)
   .post(verifyAdmin, CardController.createCardAdmin);
-router.route("/term").delete(CardController.deleteTerm);
+router.route("/term").delete(CardController.deleteTerms);
+router.route("/delet-term/:termId").delete(CardController.deleteTerm);
+router.route("/updateSlug/:slug").put(CardController.CreateSlug);
+router
+  .route("/approval/:slug")
+  .post(verifyToken, CardController.approvalPremium);
+router.route("/upgrade/:slug").put(verifyAdmin, CardController.upgradePremium);
+router
+  .route("/getPendingPremium")
+  .get(verifyAdmin, CardController.getPendingPremium);
 router
   .route("/:slug")
   .get(CardController.getCardById)
   .delete(verifyToken, CardController.deleteCard)
   .patch(verifyToken, CardController.updateCard)
   .post(verifyToken, CardController.savedCard);
-router.route("/updateSlug/:slug").put(CardController.CreateSlug);
+
 router.route("/view/:slug").put(CardController.addView);
 
 router.route("/search/:q").get(CardController.search);
@@ -52,7 +61,7 @@ router
 router
   .route("/test/repettion")
   .get(verifyToken, TestController.getSpaceRepTest);
-router.route("/test/pro2/:slug").get(verifyToken, ProLearnController.getPro);
+router.route("/test/pro/:slug").get(verifyToken, ProLearnController.getPro);
 router
   .route("/test/:slug")
   .get(TestController.getTest)

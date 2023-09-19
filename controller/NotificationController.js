@@ -5,9 +5,11 @@ const NotificationController = {
   GetNotifi: async (req, res, next) => {
     const userId = req.user._id;
     try {
-      const notifis = await Notification.find({ user: userId }).sort({
-        updatedAt: -1,
-      });
+      const notifis = await Notification.find({ user: userId })
+        .sort({
+          createdAt: -1,
+        })
+        .limit(8);
       res.status(200).json(notifis);
     } catch (error) {
       next(error);

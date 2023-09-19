@@ -93,7 +93,7 @@ const UserController = {
           .status(400)
           .json({ msg: "Tài khoản không tồn tại", code: 400 });
       }
-      loginUser(user, password, res);
+      loginUser(user, password, res, next);
     } catch (err) {
       next(err);
     }
@@ -319,7 +319,7 @@ const UserController = {
   getContact: async (req, res, next) => {
     try {
       const contacts = await ContactData.find({});
-      res.status(201).json({ msg: "Success", success: true, data: contacts });
+      res.status(200).json({ msg: "Success", success: true, data: contacts });
     } catch (err) {
       next(err);
     }
@@ -355,7 +355,7 @@ const UserController = {
       const user = await User.findOne({ email });
 
       if (user) {
-        loginUser(user, password, res);
+        loginUser(user, password, res, next);
       } else {
         const userObj = {
           username: email,
@@ -373,7 +373,7 @@ const UserController = {
           user: newUser._id,
         });
         await notifi.save();
-        loginUser(newUser, password, res);
+        loginUser(newUser, password, res, next);
       }
     } catch (err) {
       next(err);
@@ -402,7 +402,7 @@ const UserController = {
       const user = await User.findOne({ username: id });
 
       if (user) {
-        loginUser(user, password, res);
+        loginUser(user, password, res, next);
       } else {
         const userObj = {
           username: id,
@@ -420,7 +420,7 @@ const UserController = {
           user: newUser._id,
         });
         await notifi.save();
-        loginUser(newUser, password, res);
+        loginUser(newUser, password, res, next);
       }
     } catch (error) {
       next(error);
@@ -439,7 +439,7 @@ const UserController = {
   },
 };
 
-const loginUser = async (user, password, res) => {
+const loginUser = async (user, password, res, next) => {
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
     return res

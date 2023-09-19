@@ -43,6 +43,10 @@ const CardSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    type: {
+      type: String,
+      default: "regular",
+    },
   },
   { timestamps: true }
 );

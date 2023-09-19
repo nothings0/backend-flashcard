@@ -2,6 +2,7 @@ const Card = require("../model/Card");
 const User = require("../model/User");
 const Term = require("../model/Term");
 const Rate = require("../model/Rate");
+const Notification = require("../model/Notification");
 const CardSaved = require("../model/CardSaved");
 const fetch = require("node-fetch");
 const slugify = require("slugify");
@@ -413,7 +414,7 @@ const CardController = {
           }
           res.status(200).json({
             type: "success",
-            msg: "the post has been updated",
+            msg: "the card has been updated",
           });
         } catch (error) {
           next(error);
@@ -421,11 +422,60 @@ const CardController = {
       } else {
         res.status(400).json({
           type: "error",
-          msg: "you can update only your post",
+          msg: "you can update only your card",
         });
       }
     } catch (err) {
       next(err);
+    }
+  },
+  getPendingPremium: async (req, res, next) => {
+    try {
+      const cards = await Card.find({ type: "pending" });
+      res.status(200).json({ code: 200, msg: "success", data: cards });
+    } catch (error) {
+      next(error);
+    }
+  },
+  approvalPremium: async (req, res, next) => {
+    const { slug } = req.params;
+    const userId = req.user._id;
+    try {
+      await Card.findOneAndUpdate(
+        { slug },
+        {
+          $set: {
+            type: "pending",
+          },
+        }
+      );
+      const content = `Yêu cầu nâng cấp card của bạn đã được gửi. Cần từ 1 - 3 ngày để xét duyệt, vui lòng chờ đợi.`;
+      const notifi = new Notification({ content, user: userId });
+      await notifi.save();
+
+      res.status(200).json({ code: 200, msg: "yêu cầu đang được xem sét" });
+    } catch (error) {
+      next(error);
+    }
+  },
+  upgradePremium: async (req, res, next) => {
+    const { slug } = req.params;
+    // const userId = req.user._id;
+    const { decision } = req.body;
+    try {
+      const card = await Card.findOne({ slug: slug });
+      let content = "";
+      if (decision === "regular") {
+        content = `Card không đủ điều kiện để nâng cấp. Vui lòng chỉnh sửa phù hợp với chính sách của chúng tôi trước khi gửi yêu cầu lại`;
+      } else if (decision === "premium") {
+        content = `Card đã được nâng cấp thành công.`;
+      }
+      await card.updateOne({ $set: { type: decision } });
+      const notifi = new Notification({ content, user: card.user });
+      await notifi.save();
+      res.status(200).json({ code: 200, msg: content });
+    } catch (error) {
+      next(error);
     }
   },
   savedCard: async (req, res, next) => {
@@ -529,6 +579,7 @@ const CardController = {
           type: "success",
           msg: "Xóa thành công",
         });
+        await CardSaved.findOneAndDelete({ card: slug });
       } else {
         res.status(400).json({
           type: "error",
@@ -663,12 +714,25 @@ const CardController = {
       next(err);
     }
   },
-  deleteTerm: async (req, res, next) => {
+  deleteTerms: async (req, res, next) => {
     try {
       const { slug } = req.body;
       const card = await Card.findOne({ slug });
       await Term.deleteMany({ cardId: card._id });
-      return res.status(200).json({ msg: "delete success!!!!" });
+      return res
+        .status(200)
+        .json({ msg: "delete success!!!!", type: "success" });
+    } catch (error) {
+      next(error);
+    }
+  },
+  deleteTerm: async (req, res, next) => {
+    try {
+      const { termId } = req.params;
+      await Term.findByIdAndDelete(termId);
+      return res
+        .status(200)
+        .json({ msg: "delete success!!!!", type: "success" });
     } catch (error) {
       next(error);
     }
