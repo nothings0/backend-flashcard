@@ -166,7 +166,7 @@ const WriteController = {
       correctAnswer: "",
       wrongAnswer: "",
       percent: 0,
-      position: [],
+      actions: {},
     };
     try {
       const card = await Card.findOne({ slug });
@@ -179,7 +179,11 @@ const WriteController = {
         respon.check = true;
       } else {
         respon.check = false;
-        respon.position = mismatchedPositions(item.prompt, answer);
+        const merge = matchStrings(item.prompt, answer);
+        respon.actions = {
+          str: merge,
+          falsePos: findNonSubsequencePositions(item.prompt, merge),
+        };
       }
       respon.correctAnswer = item.prompt;
       respon.wrongAnswer = answer;
@@ -200,43 +204,53 @@ const WriteController = {
     }
   },
 };
+function matchStrings(s1, s2) {
+  let result = "";
 
-function mismatchedPositions(s1, s2) {
-  const matrix = Array(s1.length + 1)
-    .fill(null)
-    .map(() => Array(s2.length + 1).fill(0));
+  let i = 0,
+    j = 0;
 
-  for (let i = 1; i <= s1.length; i++) {
-    for (let j = 1; j <= s2.length; j++) {
-      if (s1[i - 1] === s2[j - 1]) {
-        matrix[i][j] = matrix[i - 1][j - 1] + 1;
-      } else {
-        matrix[i][j] = Math.max(matrix[i - 1][j], matrix[i][j - 1]);
-      }
-    }
-  }
-
-  let i = s1.length;
-  let j = s2.length;
-  const matchedPositions = [];
-
-  while (i > 0 && j > 0) {
-    if (s1[i - 1] === s2[j - 1]) {
-      matchedPositions.push(j - 1);
-      i--;
-      j--;
-    } else if (matrix[i - 1][j] > matrix[i][j - 1]) {
-      i--;
+  while (i < s1.length || j < s2.length) {
+    if (i < s1.length && j < s2.length && s1[i] === s2[j]) {
+      result += s1[i];
+      i++;
+      j++;
+    } else if (
+      i < s1.length &&
+      (j >= s2.length || s1.length - i > s2.length - j)
+    ) {
+      result += s1[i];
+      i++;
     } else {
-      j--;
+      result += s2[j];
+      j++;
     }
   }
 
-  const allPositions = Array.from({ length: s1.length }, (_, index) => index);
-  const mismatched = allPositions.filter(
-    (pos) => !matchedPositions.includes(pos)
-  );
-
-  return mismatched;
+  return result;
 }
+// function return pos that sub not in str = remove this pos of str to sub
+function findNonSubsequencePositions(sub, str) {
+  let foundPositions = [];
+  let nonMatchingPositions = [];
+  let i = 0;
+  let j = 0;
+
+  while (i < sub.length && j < str.length) {
+    if (sub[i] === str[j]) {
+      foundPositions.push(j);
+      i++;
+    }
+    j++;
+  }
+
+  for (let k = 0; k < str.length; k++) {
+    if (!foundPositions.includes(k)) {
+      nonMatchingPositions.push(k);
+    }
+  }
+
+  return nonMatchingPositions;
+}
+
 module.exports = WriteController;
