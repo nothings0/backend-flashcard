@@ -146,7 +146,7 @@ const TestController = {
           correctAnswer: "",
           wrongAnswer: "",
         };
-        let item2 = await Term.findOne({ cardId: item.card });
+        let item2 = await Term.findOne({ _id: item._id });
         if (item.type === "learn" || item.type === 1) {
           if (item2.answer.toLowerCase() === item.answer.toLowerCase()) {
             if (user) {
@@ -224,7 +224,6 @@ const TestController = {
       const reps = await Rep.find({
         $and: [{ dateRep: { $lt: currentDate } }, { user: user }],
       }).limit(limit);
-
       let repsId = [];
       for (const item of reps) {
         repsId.push(item.term);

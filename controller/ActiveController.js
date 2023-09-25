@@ -1,50 +1,70 @@
 const Rep = require("../model/Rep");
-// const Term = require("../model/Term");
-// const Card = require("../model/Card");
 const User = require("../model/User");
-
+const mongoose = require("mongoose");
 const ActiveController = {
   getActive: async (req, res, next) => {
     try {
       const userId = req.user._id;
       const currentDate = new Date();
-      const currentDate2 = new Date();
-      const start = currentDate2.setHours(0, 0, 0, 0);
-      const end = currentDate2.setHours(23, 59, 59, 999);
-      const countPromise = Promise.all([
-        Rep.find({
-          $and: [{ dateRep: { $gt: currentDate } }, { user: userId }],
-        }).count(),
-        Rep.find({
-          $and: [{ dateRep: { $lt: currentDate } }, { user: userId }],
-        }).count(),
-        Rep.find({
-          $and: [{ updatedAt: { $gte: start, $lt: end } }, { user: userId }],
-        }).count(),
-        Rep.find().count(),
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
+      const result = await Rep.aggregate([
+        {
+          $match: { user: mongoose.Types.ObjectId(userId) },
+        },
+        {
+          $facet: {
+            prepareCount: [
+              { $match: { dateRep: { $gt: currentDate } } },
+              { $group: { _id: "$term" } },
+              { $count: "count" },
+            ],
+            outDateCount: [
+              { $match: { dateRep: { $lt: currentDate } } },
+              { $group: { _id: "$term" } },
+              { $count: "count" },
+            ],
+            todayCount: [
+              {
+                $match: { updatedAt: { $gte: startOfToday, $lt: endOfToday } },
+              },
+              { $group: { _id: "$term" } },
+              { $count: "count" },
+            ],
+            allCount: [{ $group: { _id: "$term" } }, { $count: "count" }],
+          },
+        },
       ]);
-      const [prepareCount, outDateCount, todayCount, allCount] =
-        await countPromise;
-      const maxCount = allCount;
+      const [{ prepareCount, outDateCount, todayCount, allCount }] = result;
+      const [a, b, c, d] = [
+        prepareCount[0]?.count || 0,
+        outDateCount[0]?.count || 0,
+        todayCount[0]?.count || 0,
+        allCount[0]?.count || 0,
+      ];
       const response = [
         {
           text: "Ôn tập",
-          data: outDateCount,
+          data: b,
         },
         {
           text: "Chuẩn bị",
-          data: prepareCount,
+          data: a,
         },
         {
           text: "Đã học hôm nay",
-          data: todayCount,
+          data: c,
         },
         {
           text: "Đã học",
-          data: allCount,
+          data: d,
         },
       ];
-      return res.status(200).json({ data: response, max: maxCount });
+      return res.status(200).json({ data: response, max: d });
     } catch (error) {
       next(error);
     }

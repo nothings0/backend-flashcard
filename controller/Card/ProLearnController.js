@@ -1,6 +1,5 @@
 const Term = require("../../model/Term");
 const TickMark = require("../../model/TickMark");
-const fetch = require("node-fetch");
 const mongoose = require("mongoose");
 const Card = require("../../model/Card");
 const { shuffle } = require("../../util/shuffle");
