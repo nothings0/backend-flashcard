@@ -8,18 +8,26 @@ const cookies = require("cookie-parser");
 const fileUpload = require("express-fileupload");
 dotenv.config();
 require("./helper/connectRedis");
+
+// init server
+const socketIo = require("socket.io");
 const app = express();
+const server = require("http").createServer(app);
+const io = socketIo(server, {
+  cors: { origin: "http://localhost:3000" },
+});
 app.use(
   cors({
     origin: [
       "https://fluxquiz.netlify.app",
       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
+      "https://fluxquiz.vercel.app",
     ],
     credentials: true,
   })
 );
 // app.use(cors({ origin: "http://localhost:3000", credentials: true }));
-
+// init route
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
 const OpenaiRoute = require("./router/OpenaiRoute");
@@ -31,7 +39,11 @@ const TaskRoute = require("./router/Board/TaskRoute");
 const NotifiRoute = require("./router/NotifiRoute");
 const ActiveRoute = require("./router/ActiveRoute");
 
+// secure api
 const apiSecure = require("./middleware/apiSecure");
+
+// quiz live func
+const handleRoom = require("./controller/QuizLive/HandleRoom");
 
 app.use(cookies());
 app.use(express.json({}));
@@ -74,7 +86,13 @@ const connect = async () => {
   }
 };
 
-app.listen(process.env.PORT || 8000, () => {
+server.listen(process.env.PORT || 8000, () => {
   connect();
   console.log("server is running....");
 });
+
+const onConnection = (socket) => {
+  handleRoom(socket, io);
+};
+
+io.on("connection", onConnection);
