@@ -7,7 +7,7 @@ const TIME = 20;
 const TIMEOUT = 3 * 1000;
 const TIMEINTERVAL = TIMEOUT + TIME * 1000;
 const COUNT_QUES = 10;
-const URL = "https://fluxquiz.netlify.app/live";
+const URL = "https://fluxquiz.vercel.app/live";
 module.exports = (socket, io) => {
   const creatRoom = async (userId) => {
     try {
