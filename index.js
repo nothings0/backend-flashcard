@@ -14,7 +14,9 @@ const socketIo = require("socket.io");
 const app = express();
 const server = require("http").createServer(app);
 const io = socketIo(server, {
-  cors: { origin: "https://fluxquiz.netlify.app" },
+  cors: {
+    origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app"],
+  },
 });
 app.use(
   cors({

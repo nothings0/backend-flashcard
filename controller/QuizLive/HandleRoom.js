@@ -3,9 +3,10 @@ const QRCode = require("qrcode");
 const ProLearnController = require("../Card/ProLearnController");
 const client = require("../../helper/connectRedis");
 
-const TIME = 10;
+const TIME = 20;
 const TIMEOUT = 3 * 1000;
 const TIMEINTERVAL = TIMEOUT + TIME * 1000;
+const COUNT_QUES = 10;
 const URL = "https://fluxquiz.netlify.app/live";
 module.exports = (socket, io) => {
   const creatRoom = async (userId) => {
@@ -111,7 +112,7 @@ module.exports = (socket, io) => {
     sendQuestionForRoom({ slug, roomId });
     let idx = index;
     let interval = setInterval(async () => {
-      if (idx > 3) {
+      if (idx > COUNT_QUES) {
         const res = await Room.aggregate([
           {
             $match: { roomId },
