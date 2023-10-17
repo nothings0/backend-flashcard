@@ -18,6 +18,11 @@ const RoomSchema = new mongoose.Schema(
         name: String,
       },
     ],
+    status: {
+      type: String,
+      required: true,
+      default: "waiting",
+    },
   },
   { timestamps: true }
 );

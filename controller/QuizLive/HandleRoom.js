@@ -1,7 +1,11 @@
 const Room = require("../../model/Room");
 const QRCode = require("qrcode");
 const ProLearnController = require("../Card/ProLearnController");
+const client = require("../../helper/connectRedis");
 
+const TIME = 10;
+const TIMEOUT = 3 * 1000;
+const TIMEINTERVAL = TIMEOUT + TIME * 1000;
 const URL = "https://fluxquiz.netlify.app/live";
 module.exports = (socket, io) => {
   const creatRoom = async (userId) => {
@@ -10,7 +14,7 @@ module.exports = (socket, io) => {
       const room = new Room({
         members: [
           {
-            id: userId,
+            id: socket.id,
             mark: 0,
             name: "USER_01",
           },
@@ -38,7 +42,9 @@ module.exports = (socket, io) => {
         });
         await room.save();
         socket.join(roomId);
-        io.to(socket.id).emit("joined-room", { success: true });
+        let status = "success";
+        if (room.status === "running") status = "navigate";
+        io.to(socket.id).emit("joined-room", status);
 
         io.to(roomId).emit("members", room.members);
       } else {
@@ -53,6 +59,11 @@ module.exports = (socket, io) => {
       const room = await Room.findOne({ roomId: roomId });
       if (room) {
         socket.join(roomId);
+        let status = "success";
+        if (room.status === "running") {
+          status = "navigate";
+        }
+        io.to(socket.id).emit("joined-room", status);
       } else {
         io.to(socket.id).emit("error", "Invalid room ID");
       }
@@ -67,13 +78,89 @@ module.exports = (socket, io) => {
     } catch (error) {}
   };
 
-  const creatQuiz = async ({ user, slug, roomId }) => {
-    const ques = await ProLearnController.getQuiz(user, slug);
-    io.to(roomId).emit("quiz", ques);
+  function sendQuestionForRoom({ slug, roomId }) {
+    let currentQuestionStartTime = Date.now();
+    setTimeout(async () => {
+      currentQuestionStartTime = Date.now();
+      const ques = await ProLearnController.getQuiz(slug);
+      const quizStore = {
+        ques,
+        startTime: currentQuestionStartTime,
+      };
+      client.set(
+        roomId,
+        JSON.stringify(quizStore),
+        "EX",
+        TIME,
+        (err, reply) => {}
+      );
+
+      io.to(roomId).emit("quiz", quizStore);
+    }, TIMEOUT);
+  }
+
+  const ReGetQuiz = (roomId) => {
+    client.get(roomId, (err, quiz) => {
+      if (err) return;
+      ques = JSON.parse(quiz);
+      io.to(roomId).emit("quiz", ques);
+    });
   };
-  const markQuiz = async ({ answer, id }) => {
-    const result = await ProLearnController.getMark(answer, id);
-    // const room = await Room.findOne({ roomId: roomId });
+
+  const getQuiz = async ({ slug, roomId, index }) => {
+    sendQuestionForRoom({ slug, roomId });
+    let idx = index;
+    let interval = setInterval(async () => {
+      if (idx > 3) {
+        const res = await Room.aggregate([
+          {
+            $match: { roomId },
+          },
+          {
+            $unwind: "$members",
+          },
+          {
+            $group: {
+              _id: "$members.id",
+              totalMark: { $sum: "$members.mark" },
+              name: { $first: "$members.name" },
+            },
+          },
+          {
+            $sort: { totalMark: -1 }, // Sắp xếp từ cao xuống thấp
+          },
+        ]);
+
+        io.to(roomId).emit("end-quiz", res);
+
+        clearInterval(interval);
+        return;
+      }
+      sendQuestionForRoom({ slug, roomId });
+      idx = idx + 1;
+    }, TIMEINTERVAL);
+  };
+  const markQuiz = async ({ answer, id, roomId }) => {
+    try {
+      const result = await ProLearnController.getMark(answer, id);
+      if (result.check) {
+        await Room.updateOne(
+          { roomId: roomId, "members.id": socket.id },
+          { $inc: { "members.$.mark": 10 } }
+        );
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const startQuiz = async (roomId) => {
+    io.to(roomId).emit("started", roomId);
+    await Room.findOneAndUpdate(
+      { roomId: roomId },
+      {
+        $set: { status: "running" },
+      }
+    );
   };
 
   socket.on("create-room", creatRoom);
@@ -81,8 +168,10 @@ module.exports = (socket, io) => {
   socket.on("get-members", getMembers);
   socket.on("rejoin-room", reJoinRoom);
   socket.on("new-room", creatRoom);
-  socket.on("create-quiz", creatQuiz);
+  socket.on("get-quiz", getQuiz);
+  socket.on("start", startQuiz);
   socket.on("get-mark-quiz", markQuiz);
+  socket.on("re-get-quiz", ReGetQuiz);
 };
 
 function generateRoomId(length = 6) {

@@ -88,7 +88,7 @@ const ProLearnController = {
       next(err);
     }
   },
-  getQuiz: async (user, slug) => {
+  getQuiz: async (slug) => {
     try {
       let terms;
       const card = await Card.findOne({ slug });
@@ -101,6 +101,7 @@ const ProLearnController = {
       let ques = {
         prompt: term.prompt,
         learn: [],
+        id: term._id,
       };
       let correctAnswer = {
         answerTxt: "",
@@ -142,19 +143,17 @@ const ProLearnController = {
       wrongAnswer: "",
     };
     try {
-      const item = await Term.findOne({ _id: id });
-      if (item.answer.toLowerCase() === answer.toLowerCase()) {
+      // const item = await Term.findOne({ _id: id });
+      if (answer === id) {
         respon.check = true;
-        respon.correctAnswer = answer;
+        respon.correctAnswer = id;
       } else {
         respon.check = false;
-        respon.correctAnswer = item.answer;
+        respon.correctAnswer = id;
         respon.wrongAnswer = answer;
       }
-      return res.status(200).json(respon);
-    } catch (err) {
-      next(err);
-    }
+      return respon;
+    } catch (err) {}
   },
 };
 
