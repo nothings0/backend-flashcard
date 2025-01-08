@@ -19,17 +19,17 @@ const io = socketIo(server, {
   //   origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app"],
   // },
 });
-// app.use(
-//   cors({
-//     origin: [
-//       "https://fluxquiz.netlify.app",
-//       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
-//       "https://fluxquiz.vercel.app",
-//     ],
-//     credentials: true,
-//   })
-// );
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(
+  cors({
+    origin: [
+      "https://fluxquiz.netlify.app",
+      "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
+      "https://fluxquiz.vercel.app",
+    ],
+    credentials: true,
+  })
+);
+// app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 // init route
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
