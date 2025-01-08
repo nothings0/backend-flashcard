@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const cron = require("node-cron");
 // const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
@@ -14,21 +15,21 @@ const socketIo = require("socket.io");
 const app = express();
 const server = require("http").createServer(app);
 const io = socketIo(server, {
-  cors: {
-    origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app"],
-  },
+  // cors: {
+  //   origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app"],
+  // },
 });
-app.use(
-  cors({
-    origin: [
-      "https://fluxquiz.netlify.app",
-      "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
-      "https://fluxquiz.vercel.app",
-    ],
-    credentials: true,
-  })
-);
-// app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+// app.use(
+//   cors({
+//     origin: [
+//       "https://fluxquiz.netlify.app",
+//       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
+//       "https://fluxquiz.vercel.app",
+//     ],
+//     credentials: true,
+//   })
+// );
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 // init route
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
@@ -98,3 +99,13 @@ const onConnection = (socket) => {
 };
 
 io.on("connection", onConnection);
+
+cron.schedule("*/12 * * * *", async () => {
+  try {
+    const response = await axios("https://backend-kfnn.onrender.com");
+    const data = await response.data;
+    console.log(data);
+  } catch (error) {
+    console.error("Lỗi khi gọi API:", error);
+  }
+});

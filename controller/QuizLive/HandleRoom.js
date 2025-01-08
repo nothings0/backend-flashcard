@@ -1,7 +1,7 @@
 const Room = require("../../model/Room");
 const QRCode = require("qrcode");
 const ProLearnController = require("../Card/ProLearnController");
-const client = require("../../helper/connectRedis");
+// const client = require("../../helper/connectRedis");
 
 const TIME = 20;
 const TIMEOUT = 3 * 1000;
@@ -88,24 +88,24 @@ module.exports = (socket, io) => {
         ques,
         startTime: currentQuestionStartTime,
       };
-      client.set(
-        roomId,
-        JSON.stringify(quizStore),
-        "EX",
-        TIME,
-        (err, reply) => {}
-      );
+      // client.set(
+      //   roomId,
+      //   JSON.stringify(quizStore),
+      //   "EX",
+      //   TIME,
+      //   (err, reply) => {}
+      // );
 
       io.to(roomId).emit("quiz", quizStore);
     }, TIMEOUT);
   }
 
   const ReGetQuiz = (roomId) => {
-    client.get(roomId, (err, quiz) => {
-      if (err) return;
-      ques = JSON.parse(quiz);
-      io.to(roomId).emit("quiz", ques);
-    });
+    // client.get(roomId, (err, quiz) => {
+    //   if (err) return;
+    //   ques = JSON.parse(quiz);
+    //   io.to(roomId).emit("quiz", ques);
+    // });
   };
 
   const getQuiz = async ({ slug, roomId, index }) => {

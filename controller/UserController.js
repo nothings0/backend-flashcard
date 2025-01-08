@@ -6,7 +6,7 @@ const Achieve = require("../model/Achieve");
 const Notification = require("../model/Notification");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const client = require("../helper/connectRedis");
+// const client = require("../helper/connectRedis");
 const sendMail = require("../helper/sendMail");
 const jwt_decode = require("jwt-decode");
 const fetch = require("node-fetch");
@@ -111,10 +111,10 @@ const UserController = {
         return res.status(401).json({ code: 401, msg: "token expired" });
       jwt.verify(refreshToken, process.env.REFRESH_KEY, (err, user) => {
         if (err) next(err);
-        client.del(user._id.toString(), (err, reply) => {
-          if (err) return next(err);
-          res.status(200).json("Logout success!");
-        });
+        // client.del(user._id.toString(), (err, reply) => {
+        //   if (err) return next(err);
+        //   res.status(200).json("Logout success!");
+        // });
       });
       res.clearCookie("refreshToken");
     } catch (error) {
@@ -142,15 +142,15 @@ const UserController = {
           path: "/",
           sameSite: "strict",
         });
-        client.set(
-          user._id.toString(),
-          newRefreshToken,
-          "EX",
-          7 * 24 * 60 * 60,
-          (err, reply) => {
-            if (err) return next(err);
-          }
-        );
+        // client.set(
+        //   user._id.toString(),
+        //   newRefreshToken,
+        //   "EX",
+        //   7 * 24 * 60 * 60,
+        //   (err, reply) => {
+        //     if (err) return next(err);
+        //   }
+        // );
         return res.status(200).json({ accessToken });
       });
     } catch (error) {
@@ -449,15 +449,15 @@ const loginUser = async (user, password, res, next) => {
   if (user && validPassword) {
     const accessToken = UserController.generateAccessToken(user);
     const refreshToken = UserController.generateRefreshToken(user);
-    client.set(
-      user._id.toString(),
-      refreshToken,
-      "EX",
-      7 * 24 * 60 * 60,
-      (err, reply) => {
-        if (err) next(err);
-      }
-    );
+    // client.set(
+    //   user._id.toString(),
+    //   refreshToken,
+    //   "EX",
+    //   7 * 24 * 60 * 60,
+    //   (err, reply) => {
+    //     if (err) next(err);
+    //   }
+    // );
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: false,
