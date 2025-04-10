@@ -12,7 +12,11 @@ const NotificationSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true
-    }
+    },
+    url: {
+        type: String,
+        default: ''
+    },
 }, {timestamps: true})
 
 module.exports = mongoose.model("Notification", NotificationSchema)
