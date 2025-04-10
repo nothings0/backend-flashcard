@@ -102,12 +102,12 @@ const onConnection = (socket) => {
 
 io.on("connection", onConnection);
 
-cron.schedule("*/12 * * * *", async () => {
-  try {
-    const response = await axios("https://backend-kfnn.onrender.com");
-    const data = await response.data;
-    console.log(data);
-  } catch (error) {
-    console.error("Lỗi khi gọi API:", error);
-  }
-});
+// cron.schedule("*/12 * * * *", async () => {
+//   try {
+//     const response = await axios("https://backend-kfnn.onrender.com");
+//     const data = await response.data;
+//     console.log(data);
+//   } catch (error) {
+//     console.error("Lỗi khi gọi API:", error);
+//   }
+// });
