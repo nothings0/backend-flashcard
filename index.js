@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const cors = require("axios");
+const axios = require("axios");
 const dotenv = require("dotenv");
 const cron = require("node-cron");
 // const bodyParser = require("body-parser");
