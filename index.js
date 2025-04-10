@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const cors = require("axios");
 const dotenv = require("dotenv");
 const cron = require("node-cron");
 // const bodyParser = require("body-parser");
@@ -16,7 +17,7 @@ const app = express();
 const server = require("http").createServer(app);
 const io = socketIo(server, {
   cors: {
-     origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app"],
+     origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app", "http://localhost:3000/"],
  },
 });
 app.use(
@@ -25,6 +26,7 @@ app.use(
       "https://fluxquiz.netlify.app",
       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
       "https://fluxquiz.vercel.app",
+      "http://localhost:3000/" 
     ],
     credentials: true,
   })
