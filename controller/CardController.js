@@ -159,6 +159,7 @@ const CardController = {
               $project: {
                 background: 1,
                 description: 1,
+                slug: 1,
                 title: 1,
                 views: 1,
                 user: { username: 1 },
