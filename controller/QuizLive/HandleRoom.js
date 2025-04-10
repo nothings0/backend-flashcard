@@ -49,7 +49,7 @@ module.exports = (socket, io) => {
 
         io.to(roomId).emit("members", room.members);
       } else {
-        io.to(socket.id).emit("error", "Invalid room ID");
+        io.to(socket.id).emit("error", "Không tồn tại phòng này!!!");
       }
     } catch (error) {
       console.log(error);
@@ -66,7 +66,7 @@ module.exports = (socket, io) => {
         }
         io.to(socket.id).emit("joined-room", status);
       } else {
-        io.to(socket.id).emit("error", "Invalid room ID");
+        io.to(socket.id).emit("error", "Không tồn tại phòng này!!!");
       }
     } catch (error) {
       console.log(error);
