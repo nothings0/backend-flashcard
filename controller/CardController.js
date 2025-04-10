@@ -441,6 +441,10 @@ const CardController = {
   approvalPremium: async (req, res, next) => {
     const { slug } = req.params;
     const userId = req.user._id;
+
+    if(!slug) {
+      res.status(404).json({ code: 404, msg: "không tìm thấy thẻ!!" });
+    }
     try {
       await Card.findOneAndUpdate(
         { slug },

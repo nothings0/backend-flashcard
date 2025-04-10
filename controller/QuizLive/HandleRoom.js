@@ -17,7 +17,7 @@ module.exports = (socket, io) => {
           {
             id: socket.id,
             mark: 0,
-            name: "USER_01",
+            name: "YOU",
           },
         ],
         user: userId,
@@ -34,7 +34,7 @@ module.exports = (socket, io) => {
   };
   const joinRoom = async ({ roomId, username }) => {
     try {
-      const room = await Room.findOne({ roomId: roomId });
+      const room = await Room.findOne({ roomId: roomId.toUpperCase() });
       if (room) {
         room.members.push({
           id: socket.id,
@@ -57,7 +57,7 @@ module.exports = (socket, io) => {
   };
   const reJoinRoom = async (roomId) => {
     try {
-      const room = await Room.findOne({ roomId: roomId });
+      const room = await Room.findOne({ roomId: roomId.toUpperCase() });
       if (room) {
         socket.join(roomId);
         let status = "success";
@@ -74,7 +74,7 @@ module.exports = (socket, io) => {
   };
   const getMembers = async (roomId) => {
     try {
-      const room = await Room.findOne({ roomId: roomId });
+      const room = await Room.findOne({ roomId: roomId.toUpperCase() });
       io.to(roomId).emit("members", room.members);
     } catch (error) {}
   };
@@ -157,7 +157,7 @@ module.exports = (socket, io) => {
   const startQuiz = async (roomId) => {
     io.to(roomId).emit("started", roomId);
     await Room.findOneAndUpdate(
-      { roomId: roomId },
+      { roomId: roomId.toUpperCase() },
       {
         $set: { status: "running" },
       }
@@ -176,10 +176,10 @@ module.exports = (socket, io) => {
 };
 
 function generateRoomId(length = 6) {
-  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
   let result = "";
   for (let i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
-  return result;
+  return result.toUpperCase();
 }
