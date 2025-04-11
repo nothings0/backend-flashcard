@@ -18,20 +18,10 @@ const InvoiceSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  amount_in: {
-    type: mongoose.Schema.Types.Decimal128,
+  amount: {
+    type: Number,
     required: true,
-    default: 0.00
-  },
-  amount_out: {
-    type: mongoose.Schema.Types.Decimal128,
-    required: true,
-    default: 0.00
-  },
-  accumulated: {
-    type: mongoose.Schema.Types.Decimal128,
-    required: true,
-    default: 0.00
+    default: 0
   },
   code: {
     type: String,
