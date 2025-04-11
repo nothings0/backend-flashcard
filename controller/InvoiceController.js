@@ -4,8 +4,9 @@ const crypto = require('crypto');
 
 const PricingController = {
     async webhooksepay(req, res, next) {
-        const { gateway, transactionDate, accountNumber, subAccount, code, transferAmount, content, id, description } = req.body;
-
+        const { gateway, transactionDate, accountNumber, subAccount, transferAmount, content, id, description } = req.body;
+        console.log("Webhook received:", req.body);
+        
         try {
             if (!content || !id) {
                 return res.status(400).send("Missing required code | id fields");
@@ -15,9 +16,11 @@ const PricingController = {
             if (!codePayment) {
                 return res.status(400).send("Missing required code | id fields");
             }
-
+            console.log(codePayment);
+            
             const invoice = await Invoice.findOne({ code: codePayment }); // dùng đúng tên field
             if (!invoice) {
+                console.log("Invoice not found");
                 return res.status(404).send("Invoice not found");
             }
 
