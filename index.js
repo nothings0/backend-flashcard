@@ -73,7 +73,7 @@ app.use("/v1/task", apiSecure, TaskRoute);
 
 app.use("/v1/openai", OpenaiRoute);
 app.use("/v1/pricing", PricingRoute);
-app.use("/v1/payment", InvoiceRoute);
+app.use("/v1/invoice", InvoiceRoute);
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
