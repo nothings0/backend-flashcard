@@ -61,7 +61,7 @@ const PricingController = {
             next(error)
         }
     },
-    async createInvoice(req, res) {
+    async createInvoice(req, res, next) {
         const userId = req.user._id; // Lấy userId từ token đã xác thực
         const { planType, amount } = req.body;
 
