@@ -3,11 +3,10 @@ const mongoose = require('mongoose');
 const InvoiceSchema = new mongoose.Schema({
   gateway: {
     type: String,
-    required: true
+    default: "sepay"
   },
   transaction_date: {
     type: Date,
-    required: true,
     default: new Date(0)
   },
   account_number: {
@@ -25,17 +24,18 @@ const InvoiceSchema = new mongoose.Schema({
   },
   code: {
     type: String,
-    default: null
+    default: null,
+    required: true,
   },
   transaction_content: {
     type: String,
     default: null
   },
-  reference_number: {
+  description: {
     type: String,
     default: null
   },
-  description: {
+  content: {
     type: String,
     default: null
   },
@@ -53,10 +53,6 @@ const InvoiceSchema = new mongoose.Schema({
     type: String,
     enum: ['PENDING', 'SUCCESS', 'FAILED'],
     default: 'PENDING'
-  },
-  paidAt: {
-    type: Date,
-    default: null
   }
 }, { timestamps: true });
 

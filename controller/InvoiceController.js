@@ -4,14 +4,14 @@ const crypto = require('crypto');
 
 const PricingController = {
   async webhooksepay(req, res, next) {
-    const { refCode, amount, status } = req.body;
+    const { gateway, transactionDate, accountNumber, subAccount, code, transferAmount, content, id, description } = req.body;
 
     try {
-      if (!refCode || !status) {
-        return res.status(400).send("Missing required fields");
+      if (!code || !id) {
+        return res.status(400).send("Missing required code | id fields");
       }
 
-      const invoice = await Invoice.findOne({ code: refCode }); // dùng đúng tên field
+      const invoice = await Invoice.findOne({ code: code }); // dùng đúng tên field
       if (!invoice) {
         return res.status(404).send("Invoice not found");
       }
@@ -20,9 +20,18 @@ const PricingController = {
         return res.status(200).send("Invoice already processed");
       }
 
-      if (status === "SUCCESS") {
+      if (id) {
+
+        if(invoice.amount !== transferAmount) {
+          return res.status(400).send("Invalid amount");
+        }
         invoice.status = "SUCCESS";
-        invoice.paidAt = new Date();
+        invoice.gateway = gateway,
+        invoice.transaction_date = transactionDate,
+        invoice.account_number = accountNumber,
+        invoice.sub_account = subAccount,
+        invoice.description = description,
+        invoice.content = content,
         await invoice.save();
 
         const user = await User.findById(invoice.userId);
@@ -75,20 +84,18 @@ const PricingController = {
         return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
       }
 
-      const refCode = crypto.randomBytes(3).toString('hex').toUpperCase();
-      const now = new Date();
+      const code = crypto.randomBytes(3).toString('hex').toUpperCase();
 
       const newInvoice = new Invoice({
         userId,
         planType,
         gateway: 'sepay',
-        transaction_date: now,
+        transaction_date: null,
         account_number: null,
         sub_account: null,
         amount: amount,
-        code: refCode,
+        code: code,
         transaction_content: `Mua gói ${planType} bởi ${user.username}`,
-        reference_number: null,
         description: `Đăng ký gói ${planType}`,
         status: 'PENDING'
       });
@@ -99,7 +106,7 @@ const PricingController = {
         message: 'Tạo hóa đơn thành công.',
         invoice: {
           id: newInvoice._id,
-          refCode: newInvoice.code,
+          code: newInvoice.code,
           amount: parseFloat(newInvoice.amount.toString()),
           planType: newInvoice.planType,
           status: newInvoice.status,
