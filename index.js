@@ -88,7 +88,7 @@ app.use((err, req, res, next) => {
 
 const connect = async () => {
   try {
-    await mongoose.connect(process.env.NODE_ENV === "producttion" ? process.env.DB_URL : process.env.DB_URL_LOCAL);
+    await mongoose.connect(process.env.NODE_ENV === "production" ? process.env.DB_URL : process.env.DB_URL_LOCAL);
     console.log("Connected to mongoDB.");
   } catch (error) {
     throw error;
