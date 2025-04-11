@@ -48,7 +48,26 @@ const InvoiceSchema = new mongoose.Schema({
   description: {
     type: String,
     default: null
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  planType: {
+    type: String,
+    enum: ['MONTHLY', 'YEARLY'],
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['PENDING', 'SUCCESS', 'FAILED'],
+    default: 'PENDING'
+  },
+  paidAt: {
+    type: Date,
+    default: null
   }
-}, {timestamps: true});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Invoice', InvoiceSchema);
