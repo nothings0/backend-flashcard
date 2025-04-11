@@ -44,6 +44,7 @@ const TaskRoute = require("./router/Board/TaskRoute");
 const NotifiRoute = require("./router/NotifiRoute");
 const ActiveRoute = require("./router/ActiveRoute");
 const PricingRoute = require("./router/PricingRoute");
+const InvoiceRoute = require("./router/InvoiceRoute");
 
 // secure api
 const apiSecure = require("./middleware/apiSecure");
@@ -72,6 +73,7 @@ app.use("/v1/task", apiSecure, TaskRoute);
 
 app.use("/v1/openai", OpenaiRoute);
 app.use("/v1/pricing", PricingRoute);
+app.use("/v1/payment", InvoiceRoute);
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
