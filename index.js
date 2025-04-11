@@ -17,7 +17,7 @@ const app = express();
 const server = require("http").createServer(app);
 const io = socketIo(server, {
   cors: {
-     origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app", "http://localhost:3000/"],
+     origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app", "http://localhost:3000"],
  },
 });
 app.use(
@@ -26,7 +26,7 @@ app.use(
       "https://fluxquiz.netlify.app",
       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
       "https://fluxquiz.vercel.app",
-      "http://localhost:3000/" 
+      "http://localhost:3000"
     ],
     credentials: true,
   })
@@ -43,6 +43,7 @@ const TaskRoute = require("./router/Board/TaskRoute");
 
 const NotifiRoute = require("./router/NotifiRoute");
 const ActiveRoute = require("./router/ActiveRoute");
+const PricingRoute = require("./router/PricingRoute");
 
 // secure api
 const apiSecure = require("./middleware/apiSecure");
@@ -70,6 +71,7 @@ app.use("/v1/section", apiSecure, SectionRoute);
 app.use("/v1/task", apiSecure, TaskRoute);
 
 app.use("/v1/openai", OpenaiRoute);
+app.use("/v1/pricing", PricingRoute);
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
@@ -84,7 +86,7 @@ app.use((err, req, res, next) => {
 
 const connect = async () => {
   try {
-    await mongoose.connect(process.env.DB_URL);
+    await mongoose.connect(process.env.NODE_ENV === "producttion" ? process.env.DB_URL : process.env.DB_URL_LOCAL);
     console.log("Connected to mongoDB.");
   } catch (error) {
     throw error;

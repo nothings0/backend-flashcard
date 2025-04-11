@@ -32,7 +32,22 @@ const UserSchema = new mongoose.Schema({
     isAdmin: {
         type: Boolean,
         default: false
-    }
+    },
+    plan: {
+        type: {
+            type: String,
+            enum: ['FREE', 'MONTHLY', 'YEARLY'],
+            default: 'FREE'
+        },
+        startDate: {
+            type: Date,
+            default: Date.now
+        },
+        endDate: {
+            type: Date,
+            default: Date.now
+        },
+    }    
 }, {timestamps: true})
 
 module.exports = mongoose.model("User", UserSchema)
