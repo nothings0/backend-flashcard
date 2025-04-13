@@ -10,7 +10,8 @@ router
   .route("/contact")
   .post(UserController.contactService)
   .get(verifyAdmin, UserController.getContact);
-router.get("/:username", UserController.getUser);
+router.get("/:username", verifyToken, UserController.getUser);
+router.get("/user/me", verifyToken, UserController.getCurrentUser);
 router.put("/user/:userId", verifyToken, UserController.updateUser);
 router.post("/refreshToken", UserController.reqRefreshToken);
 router.post("/forgotPassword", UserController.forgotPassword);

@@ -15,7 +15,7 @@ const { OAuth2Client } = require("google-auth-library");
 const OAuthClient = new OAuth2Client(`${process.env.CLIENT_ID}`);
 
 // const CLIENT_URL = "http://localhost:3000"
-const CLIENT_URL = "https://fluxquiz.netlify.app";
+const CLIENT_URL = "https://fluxquiz.vercel.app";
 const cloudinary = require("cloudinary");
 const BoardController = require("./Board/BoardController");
 
@@ -204,6 +204,36 @@ const UserController = {
         targetRes: achieve.target,
       };
       res.status(200).json({ user, cards, achieveRes });
+    } catch (error) {
+      next(error);
+    }
+  },
+  getCurrentUser: async (req, res, next) => {
+    const userId = req.user._id;
+    try {
+      const user = await User.findById(userId, { password: 0 });
+      const accessToken = UserController.generateAccessToken(user);
+      const refreshToken = UserController.generateRefreshToken(user);
+      // client.set(
+      //   user._id.toString(),
+      //   refreshToken,
+      //   "EX",
+      //   7 * 24 * 60 * 60,
+      //   (err, reply) => {
+      //     if (err) next(err);
+      //   }
+      // );
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: false,
+        sameSite: "strict",
+        path: "/",
+      });
+      const userPL = await User.findOne(
+        { username: user.username },
+        { password: 0 }
+      );
+      return res.status(200).json({ user: userPL, accessToken });
     } catch (error) {
       next(error);
     }

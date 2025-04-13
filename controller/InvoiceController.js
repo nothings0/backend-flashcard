@@ -89,6 +89,19 @@ const PricingController = {
                 return res.status(404).json({ message: 'Không tìm thấy người dùng.' });
             }
 
+            console.log(user);
+            
+
+            if(user.plan && user.plan.type !== "FREE") {
+                const endDate = new Date(user.plan.endDate)
+                const now = new Date()
+                const isExpired = endDate < now
+
+                if(!isExpired) {
+                    return res.status(400).json({ msg: `Bạn đã đăng ký gói ${user.plan.type === "MONTHLY" ? "tháng trước đó rồi" : "năm trước đó rồi"}`, code: 400 });
+                }
+            }
+
             const code = crypto.randomBytes(3).toString('hex').toUpperCase();
 
             const newInvoice = new Invoice({
@@ -116,6 +129,7 @@ const PricingController = {
                     planType: newInvoice.planType,
                     status: newInvoice.status,
                 },
+                code: 201
             });
         } catch (err) {
             console.error(err);
