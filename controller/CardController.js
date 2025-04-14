@@ -442,7 +442,7 @@ const CardController = {
     const { slug } = req.params;
     const userId = req.user._id;
 
-    if(!slug) {
+    if (!slug) {
       res.status(404).json({ code: 404, msg: "không tìm thấy thẻ!!" });
     }
     try {
@@ -682,11 +682,28 @@ const CardController = {
     }
   },
   getAllCards: async (req, res, next) => {
+    
     try {
-      const allCards = await Card.find().populate("user", "username");
-      res.status(200).json(allCards);
-    } catch (err) {
-      next(err);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const skip = (page - 1) * limit;
+
+      const total = await Card.countDocuments();
+
+      const cards = await Card.find().populate("user", "username")
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+
+      res.status(200).json({
+        cards,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total
+      });
+    } catch (error) {
+      next(error);
     }
   },
   createCardAdmin: async (req, res, next) => {

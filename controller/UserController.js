@@ -159,8 +159,29 @@ const UserController = {
   },
   getAllUser: async (req, res, next) => {
     try {
-      const users = await User.find({}, { isAdmin: 0, password: 0 });
-      res.status(200).json(users);
+      // Lấy page và limit từ query (mặc định nếu không truyền)
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+  
+      // Tính số lượng documents bỏ qua
+      const skip = (page - 1) * limit;
+  
+      // Lấy tổng số user (phục vụ cho frontend biết tổng bao nhiêu trang)
+      const total = await User.countDocuments();
+  
+      // Lấy dữ liệu users
+      const users = await User.find({}, { isAdmin: 0, password: 0 })
+                              .skip(skip)
+                              .limit(limit)
+                              .sort({ createdAt: -1 }); // Tuỳ ý, có thể sắp xếp theo createdAt
+  
+      // Trả về dữ liệu
+      res.status(200).json({
+        users,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total
+      });
     } catch (error) {
       next(error);
     }
