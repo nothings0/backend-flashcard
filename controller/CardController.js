@@ -520,25 +520,53 @@ const CardController = {
     }
   },
   search: async (req, res, next) => {
-    const query = req.params.q;
+    const query = req.params.q?.trim();
+  
+    if (!query) return res.status(400).json({ message: "Thiếu từ khoá tìm kiếm." });
+  
     try {
-      const cards = await Card.find({ $text: { $search: query } }).limit(5);
-      const users = await User.find({ $text: { $search: query } }).limit(5);
-      const data = [
-        cards && {
-          title: "Khóa học",
-          data: cards,
-        },
-        users && {
-          title: "Người dùng",
-          data: users,
-        },
-      ];
+      const regex = new RegExp(query, "i");
+  
+      const [cardRegex, cardText, userRegex, userText] = await Promise.all([
+        Card.find({
+          $or: [
+            { title: { $regex: regex } },
+            { description: { $regex: regex } }
+          ]
+        }).limit(5),
+  
+        Card.find({ $text: { $search: query } }).limit(5),
+  
+        User.find({
+          $or: [
+            { username: { $regex: regex } },
+            { email: { $regex: regex } }
+          ]
+        }).limit(5),
+  
+        User.find({ $text: { $search: query } }).limit(5),
+      ]);
+  
+      // Gộp và loại trùng bằng Map hoặc Set nếu cần
+      const cards = [...new Map([...cardRegex, ...cardText].map(item => [item._id.toString(), item])).values()];
+      const users = [...new Map([...userRegex, ...userText].map(item => [item._id.toString(), item])).values()];
+  
+      const data = [];
+  
+      if (cards.length > 0) {
+        data.push({ title: "Khóa học", data: cards.slice(0, 5) });
+      }
+  
+      if (users.length > 0) {
+        data.push({ title: "Người dùng", data: users.slice(0, 5) });
+      }
+  
       res.status(200).json(data);
     } catch (err) {
       next(err);
     }
   },
+  
   rateCard: async (req, res, next) => {
     const { slug } = req.params;
     const { rateNum } = req.body;
@@ -682,20 +710,31 @@ const CardController = {
     }
   },
   getAllCards: async (req, res, next) => {
-    
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-
+      const search = req.query.search || '';
+  
       const skip = (page - 1) * limit;
-
-      const total = await Card.countDocuments();
-
-      const cards = await Card.find().populate("user", "username")
+  
+      // Tạo query tìm kiếm nếu có search
+      const searchQuery = search
+        ? {
+            $or: [
+              { title: { $regex: search, $options: 'i' } },
+              { content: { $regex: search, $options: 'i' } }
+            ]
+          }
+        : {};
+  
+      const total = await Card.countDocuments(searchQuery);
+  
+      const cards = await Card.find(searchQuery)
+        .populate('user', 'username')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 });
-
+  
       res.status(200).json({
         cards,
         currentPage: page,
@@ -706,16 +745,26 @@ const CardController = {
       next(error);
     }
   },
+  
   createCardAdmin: async (req, res, next) => {
     try {
-      const { title, des, json, background } = req.body;
+      const { title, description, json, background, type } = req.body;
       const term = JSON.parse(json);
       const userId = req.user._id;
+
+      const lastThreeChars = Math.random().toString(36).slice(-3);
+      const slug = slugify(title + " " + lastThreeChars, {
+        lower: true,
+        strict: true,
+      });
+
       const newCard = new Card({
         title,
-        description: des,
+        description: description,
         user: userId,
-        background,
+        background: background ? background : "linear-gradient(45deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%)",
+        type: type ? type : "regular",
+        slug
       });
       await newCard.save();
       let termCount = await Term.find({ cardId: newCard._id }).count();

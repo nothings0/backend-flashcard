@@ -159,23 +159,28 @@ const UserController = {
   },
   getAllUser: async (req, res, next) => {
     try {
-      // Lấy page và limit từ query (mặc định nếu không truyền)
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-  
-      // Tính số lượng documents bỏ qua
       const skip = (page - 1) * limit;
-  
-      // Lấy tổng số user (phục vụ cho frontend biết tổng bao nhiêu trang)
-      const total = await User.countDocuments();
-  
-      // Lấy dữ liệu users
-      const users = await User.find({}, { isAdmin: 0, password: 0 })
-                              .skip(skip)
-                              .limit(limit)
-                              .sort({ createdAt: -1 }); // Tuỳ ý, có thể sắp xếp theo createdAt
-  
-      // Trả về dữ liệu
+
+      const search = req.query.search || '';
+
+      // Tạo điều kiện tìm kiếm (dùng $regex để tìm gần đúng, không phân biệt hoa thường)
+      const searchQuery = {
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      };
+
+      const total = await User.countDocuments(searchQuery);
+
+      const users = await User.find(searchQuery, { isAdmin: 0, password: 0 })
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 });
+
       res.status(200).json({
         users,
         currentPage: page,
@@ -277,6 +282,61 @@ const UserController = {
         res.json("Update Faild!");
       }
       res.status(200).json("Update success!");
+    } catch (error) {
+      next(error);
+    }
+  },
+  adminUpdateUser: async (req, res, next) => {
+    const { name, isBlock, username } = req.body;
+
+    try {
+      const user = await User.findOne({username});
+
+      if (!user) {
+        return res.status(404).json({ msg: 'User not found' });
+      }
+      user.name = name || user.name;
+      user.isBlock = isBlock !== undefined ? isBlock : user.isBlock;
+
+      const updatedUser = await user.save();
+
+      return res.status(200).json({ msg: 'User updated successfully', user: updatedUser });
+
+    } catch (error) {
+      next(error);
+    }
+  },
+  adminAddUser: async (req, res, next) => {
+    const { username, email, password } = req.body;
+
+    try {
+      const userCheck = await User.findOne({ username });
+      const emailCheck = await User.findOne({ email });
+      if (userCheck)
+        return res.status(400).json({ msg: "Tài khoản đã tồn tại" });
+      if (emailCheck) return res.status(400).json({ msg: "Email đã tồn tại" });
+
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(password, salt);
+
+      const newUser = new User({
+        username: username,
+        password: hashed,
+        email: email,
+      });
+
+      const saveUser = await newUser.save();
+      const newAchieve = new Achieve({ user: saveUser._id });
+      await newAchieve.save();
+      const notifi = new Notification({
+        title: "Chào mừng bạn đến với fluxquiz",
+        content: "Chào mừng bạn đến với fluxquiz",
+        user: saveUser._id,
+      });
+      await notifi.save();
+      await BoardController.createBoard(dataBoard, saveUser._id);
+      res.status(201).json({ msg: "Đăng ký tài khoản thành công!", code: 201 });
+
     } catch (error) {
       next(error);
     }

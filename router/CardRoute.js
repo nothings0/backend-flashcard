@@ -24,7 +24,7 @@ router
   .post(verifyToken, CardController.createCardExtension);
 
 router
-  .route("/adminall")
+  .route("/admin/all")
   .get(verifyAdmin, CardController.getAllCards)
   .post(verifyAdmin, CardController.createCardAdmin);
 router.route("/term").delete(CardController.deleteTerms);

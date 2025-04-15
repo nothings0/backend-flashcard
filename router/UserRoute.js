@@ -18,6 +18,8 @@ router.post("/forgotPassword", UserController.forgotPassword);
 router.put("/resetPassword", verifyToken, UserController.resetPassword);
 router.post("/logout", verifyToken, UserController.logout);
 router.post("/active", UserController.activeAccount);
+router.post("/admin/add-user", UserController.adminAddUser);
+router.put("/admin/update-user", UserController.adminUpdateUser);
 
 router.post("/google_login", UserController.loginGoogle);
 router.post("/facebook_login", UserController.loginFacebook);
