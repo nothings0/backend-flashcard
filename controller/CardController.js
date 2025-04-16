@@ -454,8 +454,9 @@ const CardController = {
           },
         }
       );
+      const title = `Yêu cầu nâng cấp card của bạn đã được gửi`;
       const content = `Yêu cầu nâng cấp card của bạn đã được gửi. Cần từ 1 - 3 ngày để xét duyệt, vui lòng chờ đợi.`;
-      const notifi = new Notification({ content, user: userId });
+      const notifi = new Notification({ title, content, user: userId });
       await notifi.save();
 
       res.status(200).json({ code: 200, msg: "yêu cầu đang được xem sét" });
@@ -469,14 +470,16 @@ const CardController = {
     const { decision } = req.body;
     try {
       const card = await Card.findOne({ slug: slug });
-      let content = "";
+      let content = "", title;
       if (decision === "regular") {
+        title = `Nâng cấp thẻ không thành công`;
         content = `Card không đủ điều kiện để nâng cấp. Vui lòng chỉnh sửa phù hợp với chính sách của chúng tôi trước khi gửi yêu cầu lại`;
       } else if (decision === "premium") {
+        title = `Nâng cấp thẻ thành công`;
         content = `Card đã được nâng cấp thành công.`;
       }
       await card.updateOne({ $set: { type: decision } });
-      const notifi = new Notification({ content, user: card.user });
+      const notifi = new Notification({title, content, user: card.user });
       await notifi.save();
       res.status(200).json({ code: 200, msg: content });
     } catch (error) {

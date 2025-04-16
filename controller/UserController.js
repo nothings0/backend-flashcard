@@ -286,6 +286,33 @@ const UserController = {
       next(error);
     }
   },
+  updatePlan: async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({ msg: "User not found" });
+      }
+  
+      const now = new Date();
+      
+      if (user.plan?.endDate && user.plan.endDate < now && user.plan.type !== 'FREE') {
+        user.plan = {
+          type: 'FREE',
+          startDate: null,
+          endDate: null
+        };
+        await user.save();
+        return res.status(200).json({ msg: "Plan expired. Updated to FREE." });
+      }
+  
+      return res.status(200).json({ msg: "Plan is still valid. No update needed." });
+  
+    } catch (error) {
+      next(error);
+    }
+  },  
   adminUpdateUser: async (req, res, next) => {
     const { name, isBlock, username } = req.body;
 
@@ -460,14 +487,35 @@ const UserController = {
         return res
           .status(401)
           .json({ msg: "Email chưa hoàn tất xác thực Google" });
-      const password = email + "your google secrect password";
-      const passwordHash = await bcrypt.hash(password, 10);
 
       const user = await User.findOne({ email });
-
+      
       if (user) {
-        loginUser(user, password, res, next);
+          const accessToken = UserController.generateAccessToken(user);
+          const refreshToken = UserController.generateRefreshToken(user);
+          // client.set(
+          //   user._id.toString(),
+          //   refreshToken,
+          //   "EX",
+          //   7 * 24 * 60 * 60,
+          //   (err, reply) => {
+          //     if (err) next(err);
+          //   }
+          // );
+          res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict",
+            path: "/",
+          });
+          const userPL = await User.findOne(
+            { username: user.username },
+            { password: 0 }
+          );
+          return res.status(200).json({ user: userPL, accessToken });
       } else {
+        const password = email + "Fluxquiz";
+        const passwordHash = await bcrypt.hash(password, 10);
         const userObj = {
           username: email,
           email,
