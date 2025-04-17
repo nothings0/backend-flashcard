@@ -14,6 +14,31 @@ const NotificationController = {
       next(error);
     }
   },
+  GetNotifis: async (req, res, next) => {
+    try {
+      const page = parseInt(req.query.page) || 1; // mặc định trang 1
+      const limit = parseInt(req.query.limit) || 8; // mặc định 8 thông báo
+      const skip = (page - 1) * limit;
+
+      const [notifis, total] = await Promise.all([
+        Notification.find({})
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        Notification.countDocuments({}) // để biết tổng số thông báo
+      ]);
+
+      res.status(200).json({
+        data: notifis,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
 
   // Tạo thông báo cho một người dùng
   CreateNotifi: async (req, res, next) => {

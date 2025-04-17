@@ -11,6 +11,7 @@ router
 
 router
   .route("/multiple")
-  .post(verifyAdmin, NotificationController.CreateMultiple);
+  .post(verifyAdmin, NotificationController.CreateMultiple)
+  .get(verifyAdmin, NotificationController.GetNotifis);
 
 module.exports = router;

@@ -46,6 +46,7 @@ const ActiveRoute = require("./router/ActiveRoute");
 const PricingRoute = require("./router/PricingRoute");
 const InvoiceRoute = require("./router/InvoiceRoute");
 const AdminRoute = require("./router/AdminRoute");
+const BannerRoute = require("./router/BannerRoute");
 
 // secure api
 const apiSecure = require("./middleware/apiSecure");
@@ -76,6 +77,7 @@ app.use("/v1/openai", OpenaiRoute);
 app.use("/v1/pricing", PricingRoute);
 app.use("/v1/invoice", InvoiceRoute);
 app.use("/v1/admin", AdminRoute);
+app.use("/v1/banner", BannerRoute);
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
