@@ -1,54 +1,59 @@
 const User = require("../model/User");
-const Term = require("../model/Term");
+const Card = require("../model/Card");
 const Invoice = require("../model/Invoice");
 
 const AdminController = {
   statistical: async (req, res, next) => {
     try {
-      const { period } = req.query; // Lấy tham số period từ query (e.g., "day", "week", "month", hoặc "year")
+      const { period } = req.query;
 
-      // Validate period
-      if (!["day", "week", "month", "year"].includes(period)) {
+     
+      if (!["day", "week", "month", "year", "all"].includes(period)) {
         return res.status(400).json({
           success: false,
           message: "Invalid period. Use 'day', 'week', 'month', or 'year'.",
         });
       }
 
-      // Tính toán khoảng thời gian hiện tại và trước đó
-      const now = new Date(); // Current date: 2025-04-16
+     
+      const now = new Date();
       let currentStartDate, currentEndDate, previousStartDate, previousEndDate;
 
       if (period === "day") {
-        currentEndDate = new Date(now); // 2025-04-16
-        currentStartDate = new Date(now.setDate(now.getDate() - 1)); // 2025-04-15
-        previousEndDate = new Date(currentStartDate); // 2025-04-15
-        previousStartDate = new Date(previousEndDate.setDate(previousEndDate.getDate() - 1)); // 2025-04-14
+        currentEndDate = new Date(now);
+        currentStartDate = new Date(now.setDate(now.getDate() - 1));
+        previousEndDate = new Date(currentStartDate);
+        previousStartDate = new Date(previousEndDate.setDate(previousEndDate.getDate() - 1));
       } else if (period === "week") {
-        currentEndDate = new Date(now); // 2025-04-16
-        currentStartDate = new Date(now.setDate(now.getDate() - 7)); // 2025-04-09
-        previousEndDate = new Date(currentStartDate); // 2025-04-09
-        previousStartDate = new Date(previousEndDate.setDate(previousEndDate.getDate() - 7)); // 2025-04-02
+        currentEndDate = new Date(now);
+        currentStartDate = new Date(now.setDate(now.getDate() - 7));
+        previousEndDate = new Date(currentStartDate);
+        previousStartDate = new Date(previousEndDate.setDate(previousEndDate.getDate() - 7));
       } else if (period === "month") {
-        currentEndDate = new Date(now); // 2025-04-16
-        currentStartDate = new Date(now.setMonth(now.getMonth() - 1)); // 2025-03-16
-        previousEndDate = new Date(currentStartDate); // 2025-03-16
-        previousStartDate = new Date(previousEndDate.setMonth(previousEndDate.getMonth() - 1)); // 2025-02-16
+        currentEndDate = new Date(now);
+        currentStartDate = new Date(now.setMonth(now.getMonth() - 1));
+        previousEndDate = new Date(currentStartDate);
+        previousStartDate = new Date(previousEndDate.setMonth(previousEndDate.getMonth() - 1));
       } else if (period === "year") {
-        currentEndDate = new Date(now); // 2025-04-16
-        currentStartDate = new Date(now.setFullYear(now.getFullYear() - 1)); // 2024-04-16
-        previousEndDate = new Date(currentStartDate); // 2024-04-16
-        previousStartDate = new Date(previousEndDate.setFullYear(previousEndDate.getFullYear() - 1)); // 2023-04-16
+        currentEndDate = new Date(now);
+        currentStartDate = new Date(now.setFullYear(now.getFullYear() - 1));
+        previousEndDate = new Date(currentStartDate);
+        previousStartDate = new Date(previousEndDate.setFullYear(previousEndDate.getFullYear() - 1));
+      } else if (period === "all") {
+        currentEndDate = new Date(now);
+        currentStartDate = new Date("1970-01-01");
+        previousEndDate = currentEndDate;
+        previousStartDate = currentStartDate; // Set to same range
       }
 
       // Promise.all để thực hiện song song
       const [
         currentUsersAgg,
-        currentTermsAgg,
+        currentCardsAgg,
         currentInvoicesAgg,
         currentRevenueAgg,
         previousUsersAgg,
-        previousTermsAgg,
+        previousCardsAgg,
         previousInvoicesAgg,
         previousRevenueAgg,
       ] = await Promise.all([
@@ -57,19 +62,19 @@ const AdminController = {
           { $match: { createdAt: { $gte: currentStartDate, $lte: currentEndDate } } },
           { $group: { _id: null, totalUsers: { $sum: 1 } } },
         ]),
-        // Current period: Terms
-        Term.aggregate([
+        // Current period: Cards
+        Card.aggregate([
           {
             $match: {
               $or: [
                 { createdAt: { $gte: currentStartDate, $lte: currentEndDate } },
-                { createdAt: { $exists: false } }, // Include terms without createdAt
+                { createdAt: { $exists: false } }, // Include cards without createdAt
               ],
             },
           },
-          { $group: { _id: null, totalTerms: { $sum: 1 } } },
+          { $group: { _id: null, totalCards: { $sum: 1 } } },
         ]).then((result) => {
-          console.log(`Term aggregation for ${period} (start: ${currentStartDate}, end: ${currentEndDate}):`, result);
+          console.log(`Card aggregation for ${period} (start: ${currentStartDate}, end: ${currentEndDate}):`, result);
           return result;
         }),
         // Current period: Invoices
@@ -87,17 +92,17 @@ const AdminController = {
           { $match: { createdAt: { $gte: previousStartDate, $lt: previousEndDate } } },
           { $group: { _id: null, totalUsers: { $sum: 1 } } },
         ]),
-        // Previous period: Terms
-        Term.aggregate([
+        // Previous period: Cards
+        Card.aggregate([
           {
             $match: {
               $or: [
                 { createdAt: { $gte: previousStartDate, $lt: previousEndDate } },
-                { createdAt: { $exists: false } }, // Include terms without createdAt
+                { createdAt: { $exists: false } }, // Include cards without createdAt
               ],
             },
           },
-          { $group: { _id: null, totalTerms: { $sum: 1 } } },
+          { $group: { _id: null, totalCards: { $sum: 1 } } },
         ]),
         // Previous period: Invoices
         Invoice.aggregate([
@@ -114,7 +119,7 @@ const AdminController = {
       // Lấy giá trị hiện tại
       const current = {
         totalUsers: currentUsersAgg[0]?.totalUsers || 0,
-        totalTerms: currentTermsAgg[0]?.totalTerms || 0,
+        totalCards: currentCardsAgg[0]?.totalCards || 0,
         totalInvoices: currentInvoicesAgg[0]?.totalInvoices || 0,
         totalRevenue: currentRevenueAgg[0]?.totalRevenue || 0,
       };
@@ -122,7 +127,7 @@ const AdminController = {
       // Lấy giá trị trước đó
       const previous = {
         totalUsers: previousUsersAgg[0]?.totalUsers || 0,
-        totalTerms: previousTermsAgg[0]?.totalTerms || 0,
+        totalCards: previousCardsAgg[0]?.totalCards || 0,
         totalInvoices: previousInvoicesAgg[0]?.totalInvoices || 0,
         totalRevenue: previousRevenueAgg[0]?.totalRevenue || 0,
       };
@@ -139,28 +144,32 @@ const AdminController = {
       // Tạo mảng data theo định dạng yêu cầu
       const data = [
         {
-          title: "Total Users",
+          title: "Người dùng",
           value: current.totalUsers,
           percentageValue: calculatePercentage(current.totalUsers, previous.totalUsers),
           percentageType: current.totalUsers >= previous.totalUsers ? "increase" : "decrease",
+          icon: "fas fa-users yellow",
         },
         {
-          title: "Total Terms",
-          value: current.totalTerms,
-          percentageValue: calculatePercentage(current.totalTerms, previous.totalTerms),
-          percentageType: current.totalTerms >= previous.totalTerms ? "increase" : "decrease",
+          title: "Thẻ Flashcard",
+          value: current.totalCards,
+          percentageValue: calculatePercentage(current.totalCards, previous.totalCards),
+          percentageType: current.totalCards >= previous.totalCards ? "increase" : "decrease",
+          icon: "fas fa-book red",
         },
         {
-          title: "Total Invoices",
+          title: "Hóa đơn",
           value: current.totalInvoices,
           percentageValue: calculatePercentage(current.totalInvoices, previous.totalInvoices),
           percentageType: current.totalInvoices >= previous.totalInvoices ? "increase" : "decrease",
+          icon: "fas fa-file-invoice-dollar blue",
         },
         {
-          title: "Total Revenue",
-          value: current.totalRevenue,
+          title: "Doanh thu",
+          value: current.totalRevenue.toLocaleString("vi-VN"),
           percentageValue: calculatePercentage(current.totalRevenue, previous.totalRevenue),
           percentageType: current.totalRevenue >= previous.totalRevenue ? "increase" : "decrease",
+          icon: "fas fa-money-bill-wave green",
         },
       ];
 
@@ -180,169 +189,136 @@ const AdminController = {
       });
     }
   },
-  chartData: async (req, res, next) => {
+  recentIncome: async (req, res, next) => {
     try {
-      const { period } = req.query;
-      if (!["day", "week", "month", "year"].includes(period)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid period. Use 'day', 'week', 'month', or 'year'.",
-        });
-      }
-
       const now = new Date();
-      let startDate, endDate, groupBy;
+      const endDate = new Date(now);
+      const startDate = new Date(now.setDate(now.getDate() - 7));
 
-      if (period === "day") {
-        endDate = new Date(now);
-        startDate = new Date(now.setDate(now.getDate() - 1));
-        groupBy = { $hour: "$createdAt" }; // Group by hour for day
-      } else if (period === "week") {
-        endDate = new Date(now);
-        startDate = new Date(now.setDate(now.getDate() - 7));
-        groupBy = { $dayOfMonth: "$createdAt" };
-      } else if (period === "month") {
-        endDate = new Date(now);
-        startDate = new Date(now.setMonth(now.getMonth() - 1));
-        groupBy = { $dayOfMonth: "$createdAt" };
-      } else if (period === "year") {
-        endDate = new Date(now);
-        startDate = new Date(now.setFullYear(now.getFullYear() - 1));
-        groupBy = { $month: "$createdAt" };
-      }
-
-      const [
-        dailyMetrics,
-        invoiceStatus,
-        termsByCard,
-      ] = await Promise.all([
-        // Daily/Hourly Metrics (Line Chart)
-        Promise.all([
-          User.aggregate([
-            { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-            {
-              $group: {
-                _id: groupBy,
-                totalUsers: { $sum: 1 },
-              },
-            },
-            { $sort: { _id: 1 } },
-          ]),
-          Term.aggregate([
-            {
-              $match: {
-                $or: [
-                  { createdAt: { $gte: startDate, $lte: endDate } },
-                  { createdAt: { $exists: false } },
-                ],
-              },
-            },
-            {
-              $group: {
-                _id: groupBy,
-                totalTerms: { $sum: 1 },
-              },
-            },
-            { $sort: { _id: 1 } },
-          ]),
-          Invoice.aggregate([
-            { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-            {
-              $group: {
-                _id: groupBy,
-                totalInvoices: { $sum: 1 },
-              },
-            },
-            { $sort: { _id: 1 } },
-          ]),
-          Invoice.aggregate([
-            { $match: { status: "SUCCESS", createdAt: { $gte: startDate, $lte: endDate } } },
-            {
-              $group: {
-                _id: groupBy,
-                totalRevenue: { $sum: { $toDouble: "$amount" } },
-              },
-            },
-            { $sort: { _id: 1 } },
-          ]),
-        ]),
-        // Invoice Status (Pie Chart)
-        Invoice.aggregate([
-          { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-          {
-            $group: {
-              _id: "$status",
-              totalAmount: { $sum: { $toDouble: "$amount" } },
-            },
-          },
-        ]),
-
-        Term.aggregate([{
+      const revenueByDay= await Invoice.aggregate([
+        {
           $match: {
-            $or: [
-              { createdAt: { $gte: startDate, $lte: endDate } },
-              { createdAt: { $exists: false } },
-            ],
-          }
+            status: "SUCCESS",
+            createdAt: { $gte: startDate, $lte: endDate },
+          },
         },
         {
           $group: {
-            _id: { cardId: "$cardId", time: groupBy },
-            totalTerms: { $sum: 1 },
-          }
+            _id: { $dayOfWeek: "$createdAt" },
+            income: { $sum: { $toDouble: "$amount" } },
+          },
         },
-        { $sort: { "_id.time": 1 } },
-        ])
-      ]);
+        {
+          $sort: { _id: 1 },
+        },
+      ])
+      const dayMap = [
+        { day: "Sun", dow: 1, income: 0 },
+        { day: "Mon", dow: 2, income: 0 },
+        { day: "Tue", dow: 3, income: 0 },
+        { day: "Wed", dow: 4, income: 0 },
+        { day: "Thu", dow: 5, income: 0 },
+        { day: "Fri", dow: 6, income: 0 },
+        { day: "Sat", dow: 7, income: 0 },
+      ];
 
-
-      // Format daily metrics
-      const dailyData = dailyMetrics[0].map((user, i) => ({
-        time: period === "day" ? `${user._id}:00` : period === "year" ? `Month ${user._id}` : `Day ${user._id}`,
-        totalUsers: user.totalUsers || 0,
-        totalTerms: dailyMetrics[1][i]?.totalTerms || 0,
-        totalInvoices: dailyMetrics[2][i]?.totalInvoices || 0,
-        totalRevenue: dailyMetrics[3][i]?.totalRevenue || 0,
-      }));
-
-      // Format invoice status
-      const statusData = invoiceStatus.map((item) => ({
-        status: item._id,
-        value: item.totalAmount,
-      }));
-
-      // Format terms by card
-      const cardData = termsByCard.reduce((acc, item) => {
-        const time = period === "day" ? `${item._id.time}:00` : period === "year" ? `Month ${item._id.time}` : `Day ${item._id.time}`;
-        let entry = acc.find((e) => e.time === time);
-        if (!entry) {
-          entry = { time };
-          acc.push(entry);
+      revenueByDay.forEach((item) => {
+        const index = dayMap.findIndex((d) => d.dow === item._id);
+        if (index !== -1) {
+          dayMap[index].income = item.income;
         }
-        entry[`card_${item._id.cardId}`] = item.totalTerms;
-        return acc;
-      }, []);
+      });
+
+      const orderedData = [
+        dayMap[1],
+        dayMap[2],
+        dayMap[3],
+        dayMap[4],
+        dayMap[5],
+        dayMap[6],
+        dayMap[0],
+      ].map(({ day, income }) => ({ day, income }));
+
+     
+
 
       return res.status(200).json({
         success: true,
-        data: {
-          dailyMetrics: dailyData,
-          invoiceStatus: statusData,
-          termsByCard: cardData,
-        },
-        time: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-        },
+        data: orderedData,
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
-        message: "Lấy dữ liệu biểu đồ thất bại",
+        message: "Lấy dữ liệu doanh thu thất bại",
         error: error.message,
       });
     }
   },
+  getCards: async (req, res, next) => {
+    try {
+      const { page = 1, limit = 10, sort = 'views:desc' } = req.query;
+
+      // Parse pagination parameters
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+      if (isNaN(pageNum) || pageNum < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid page number",
+        });
+      }
+      if (isNaN(limitNum) || limitNum < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid limit",
+        });
+      }
+
+      // Parse sort parameter (e.g., "name:asc" or "createdAt:desc")
+      let sortField = 'createdAt';
+      let sortOrder = -1; // Default: descending
+      if (sort) {
+        const [field, order] = sort.split(':');
+        if (!field || !['title', 'createdAt', "views"].includes(field)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid sort field. Use 'name' or 'createdAt'.",
+          });
+        }
+        sortField = field;
+        sortOrder = order === 'asc' ? 1 : -1;
+      }
+
+      // Query cards with pagination and sorting
+      const skip = (pageNum - 1) * limitNum;
+      const [cards, totalItems] = await Promise.all([
+        Card.find()
+          .sort({ [sortField]: sortOrder })
+          .skip(skip)
+          .limit(limitNum).select("-password")
+          .lean(),
+        Card.countDocuments(),
+      ]);
+
+      // Calculate pagination metadata
+      const totalPages = Math.ceil(totalItems / limitNum);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          cards,
+          pagination: {
+            currentPage: pageNum,
+            totalPages,
+            totalItems,
+            limit: limitNum,
+          },
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 };
 
 module.exports = AdminController;

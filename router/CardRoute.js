@@ -27,6 +27,11 @@ router
   .route("/admin/all")
   .get(verifyAdmin, CardController.getAllCards)
   .post(verifyAdmin, CardController.createCardAdmin);
+
+router
+  .route("/admin")
+  .patch(verifyAdmin, CardController.updateCardAdmin)
+  
 router.route("/term").delete(CardController.deleteTerms);
 router.route("/delet-term/:termId").delete(CardController.deleteTerm);
 router.route("/updateSlug/:slug").put(CardController.CreateSlug);

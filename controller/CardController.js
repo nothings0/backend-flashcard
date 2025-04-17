@@ -116,7 +116,8 @@ const CardController = {
           cards = await Card.find({ share: true })
             .populate("user", "username")
             .sort({ views: -1 })
-            .limit(limit);
+            .limit(limit)
+            .select("-password");
           const cnt = await Card.find({ share: true }).count();
           count = cnt > 10 ? 10 : cnt;
           title = "Phổ biến";
@@ -124,7 +125,8 @@ const CardController = {
           cards = await Card.find({ share: true })
             .populate("user", "username")
             .sort({ "rate.total": 1, "rate.quantity": 1 })
-            .limit(limit);
+            .limit(limit)
+            .select("-password");
           const cnt = await Card.find({ share: true }).count();
           count = cnt > 10 ? 10 : cnt;
           title = "Đánh giá cao";
@@ -163,6 +165,7 @@ const CardController = {
                 title: 1,
                 views: 1,
                 user: { username: 1 },
+                type: 1,
                 _id: 1,
               },
             },
@@ -201,12 +204,14 @@ const CardController = {
       const populateCards = await Card.find({ share: true })
         .populate("user", "username")
         .sort({ views: -1 })
-        .limit(limit);
+        .limit(limit)
+        .select("-password");
 
       const rateCards = await Card.find({ share: true })
         .populate("user", "username")
         .sort({ "rate.total": -1, "rate.quantity": -1 })
-        .limit(limit);
+        .limit(limit)
+        .select("-password");
 
       const cardSavedArr = await CardSaved.find({ user: userId });
       let cardSaveds = [];
@@ -240,6 +245,8 @@ const CardController = {
             user: { username: 1 },
             _id: 1,
             slug: 1,
+            type: 1,
+            password: -1
           },
         },
         { $sample: { size: limit } },
@@ -315,7 +322,8 @@ const CardController = {
   getCardsOfUser: async (req, res, next) => {
     try {
       const userId = req.user._id;
-      const cards = await Card.find({ user: userId }, { title: 1, _id: 1 });
+      const cards = await Card.find({ user: userId }, { title: 1, _id: 1 })
+      .select("-password");
       res.status(200).json(cards);
     } catch (error) {
       next(error);
@@ -430,6 +438,28 @@ const CardController = {
       next(err);
     }
   },
+  updateCardAdmin: async (req, res, next) => {
+    const {data} = req.body;
+    
+    try {
+      const card = await Card.findOne({ slug: data.slug });
+      if (!card) {
+        return res.status(404).json({ msg: "Card not found" });
+      }
+      const { title, description, background, type } = data;
+      await card.updateOne({
+        $set: {
+          title,
+          description,
+          background,
+          type,
+        },
+      });
+      return res.status(200).json({ msg: "Card updated successfully" });
+    } catch (err) {
+      next(err);
+    }
+  },
   getPendingPremium: async (req, res, next) => {
     try {
       const cards = await Card.find({ type: "pending" });
@@ -450,7 +480,7 @@ const CardController = {
         { slug },
         {
           $set: {
-            type: "pending",
+            type: "PENDING",
           },
         }
       );
@@ -477,6 +507,9 @@ const CardController = {
       } else if (decision === "premium") {
         title = `Nâng cấp thẻ thành công`;
         content = `Card đã được nâng cấp thành công.`;
+      } else if (decision === "promax") {
+        title = `Nâng cấp thẻ PROMAX thành công`;
+        content = `Card đã được nâng cấp PROMAX thành công.`;
       }
       await card.updateOne({ $set: { type: decision } });
       const notifi = new Notification({title, content, user: card.user });

@@ -45,7 +45,7 @@ const CardSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      default: "regular",
+      default: "REGULAR",
     },
     password: {
       type: String,
