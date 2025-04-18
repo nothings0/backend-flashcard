@@ -290,13 +290,13 @@ const UserController = {
     try {
       const userId = req.user._id;
       const user = await User.findById(userId);
-      
+
       if (!user) {
         return res.status(404).json({ msg: "User not found" });
       }
-  
+
       const now = new Date();
-      
+
       if (user.plan?.endDate && user.plan.endDate < now && user.plan.type !== 'FREE') {
         user.plan = {
           type: 'FREE',
@@ -306,23 +306,35 @@ const UserController = {
         await user.save();
         return res.status(200).json({ msg: "Plan expired. Updated to FREE." });
       }
-  
+
       return res.status(200).json({ msg: "Plan is still valid. No update needed." });
-  
+
     } catch (error) {
       next(error);
     }
-  },  
+  },
   adminUpdateUser: async (req, res, next) => {
-    const { name, isBlock, username } = req.body;
+    const { name, isBlock, username, plan } = req.body;
 
     try {
-      const user = await User.findOne({username});
+      const user = await User.findOne({ username });
 
       if (!user) {
         return res.status(404).json({ msg: 'User not found' });
       }
+      // check type of plan, if monthly or yearly, set startDate and endDate
+      plan.startDate = plan.startDate ? new Date(plan.startDate).toISOString() : new Date().toISOString();
+      plan.endDate = (() => {
+        const endDate = new Date();
+        if (plan.type === 'MONTHLY') {
+          endDate.setMonth(endDate.getMonth() + 1);
+        } else if (plan.type === 'YEARLY') {
+          endDate.setFullYear(endDate.getFullYear() + 1);
+        }
+        return endDate.toISOString();
+      })()
       user.name = name || user.name;
+      user.plan = plan || user.plan;
       user.isBlock = isBlock !== undefined ? isBlock : user.isBlock;
 
       const updatedUser = await user.save();
@@ -489,30 +501,30 @@ const UserController = {
           .json({ msg: "Email chưa hoàn tất xác thực Google" });
 
       const user = await User.findOne({ email });
-      
+
       if (user) {
-          const accessToken = UserController.generateAccessToken(user);
-          const refreshToken = UserController.generateRefreshToken(user);
-          // client.set(
-          //   user._id.toString(),
-          //   refreshToken,
-          //   "EX",
-          //   7 * 24 * 60 * 60,
-          //   (err, reply) => {
-          //     if (err) next(err);
-          //   }
-          // );
-          res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false,
-            sameSite: "strict",
-            path: "/",
-          });
-          const userPL = await User.findOne(
-            { username: user.username },
-            { password: 0 }
-          );
-          return res.status(200).json({ user: userPL, accessToken });
+        const accessToken = UserController.generateAccessToken(user);
+        const refreshToken = UserController.generateRefreshToken(user);
+        // client.set(
+        //   user._id.toString(),
+        //   refreshToken,
+        //   "EX",
+        //   7 * 24 * 60 * 60,
+        //   (err, reply) => {
+        //     if (err) next(err);
+        //   }
+        // );
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: false,
+          sameSite: "strict",
+          path: "/",
+        });
+        const userPL = await User.findOne(
+          { username: user.username },
+          { password: 0 }
+        );
+        return res.status(200).json({ user: userPL, accessToken });
       } else {
         const password = email + "Fluxquiz";
         const passwordHash = await bcrypt.hash(password, 10);

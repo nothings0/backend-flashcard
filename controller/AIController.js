@@ -15,7 +15,7 @@ const AIController = {
       return res.status(404).json({ msg: "Người dùng không tồn tại" });
     }
 
-    if(user.plan.type !== "PLUS") {
+    if(!["MONTHLY", "YEARLY"].includes(user.plan.type)) {
       return res.status(403).json({ msg: "Người dùng không có quyền truy cập" });
     }
 
