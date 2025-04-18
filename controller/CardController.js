@@ -460,7 +460,7 @@ const CardController = {
       next(err);
     }
   },
-  getPendingPremium: async (req, res, next) => {
+  getPendingPlus: async (req, res, next) => {
     try {
       const cards = await Card.find({ type: "pending" });
       res.status(200).json({ code: 200, msg: "success", data: cards });
@@ -468,7 +468,7 @@ const CardController = {
       next(error);
     }
   },
-  approvalPremium: async (req, res, next) => {
+  approvalPlus: async (req, res, next) => {
     const { slug } = req.params;
     const userId = req.user._id;
 
@@ -494,7 +494,7 @@ const CardController = {
       next(error);
     }
   },
-  upgradePremium: async (req, res, next) => {
+  upgradePlus: async (req, res, next) => {
     const { slug } = req.params;
     // const userId = req.user._id;
     const { decision } = req.body;
@@ -504,12 +504,12 @@ const CardController = {
       if (decision === "regular") {
         title = `Nâng cấp thẻ không thành công`;
         content = `Card không đủ điều kiện để nâng cấp. Vui lòng chỉnh sửa phù hợp với chính sách của chúng tôi trước khi gửi yêu cầu lại`;
-      } else if (decision === "premium") {
+      } else if (decision === "plus") {
         title = `Nâng cấp thẻ thành công`;
         content = `Card đã được nâng cấp thành công.`;
-      } else if (decision === "promax") {
-        title = `Nâng cấp thẻ PROMAX thành công`;
-        content = `Card đã được nâng cấp PROMAX thành công.`;
+      } else if (decision === "pro") {
+        title = `Nâng cấp thẻ PRO thành công`;
+        content = `Card đã được nâng cấp PRO thành công.`;
       }
       await card.updateOne({ $set: { type: decision } });
       const notifi = new Notification({title, content, user: card.user });

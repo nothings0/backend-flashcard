@@ -37,11 +37,11 @@ router.route("/delet-term/:termId").delete(CardController.deleteTerm);
 router.route("/updateSlug/:slug").put(CardController.CreateSlug);
 router
   .route("/approval/:slug")
-  .post(verifyToken, CardController.approvalPremium);
-router.route("/upgrade/:slug").put(verifyAdmin, CardController.upgradePremium);
+  .post(verifyToken, CardController.approvalPlus);
+router.route("/upgrade/:slug").put(verifyAdmin, CardController.upgradePlus);
 router
-  .route("/getPendingPremium")
-  .get(verifyAdmin, CardController.getPendingPremium);
+  .route("/getPendingPlus")
+  .get(verifyAdmin, CardController.getPendingPlus);
 router
   .route("/:slug")
   .get(CardController.getCardById)

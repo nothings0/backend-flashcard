@@ -35,7 +35,6 @@ app.use(
 // init route
 const UserRoute = require("./router/UserRoute");
 const CardRoute = require("./router/CardRoute");
-const OpenaiRoute = require("./router/OpenaiRoute");
 
 const BoardRoute = require("./router/Board/BoardRoute");
 const SectionRoute = require("./router/Board/SectionRoute");
@@ -47,6 +46,7 @@ const PricingRoute = require("./router/PricingRoute");
 const InvoiceRoute = require("./router/InvoiceRoute");
 const AdminRoute = require("./router/AdminRoute");
 const BannerRoute = require("./router/BannerRoute");
+const AIRoute = require("./router/AIRoute");
 
 // secure api
 const apiSecure = require("./middleware/apiSecure");
@@ -73,11 +73,11 @@ app.use("/v1/board", apiSecure, BoardRoute);
 app.use("/v1/section", apiSecure, SectionRoute);
 app.use("/v1/task", apiSecure, TaskRoute);
 
-app.use("/v1/openai", OpenaiRoute);
 app.use("/v1/pricing", PricingRoute);
 app.use("/v1/invoice", InvoiceRoute);
 app.use("/v1/admin", AdminRoute);
 app.use("/v1/banner", BannerRoute);
+app.use("/v1/ai", AIRoute);
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
