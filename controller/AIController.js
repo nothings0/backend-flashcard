@@ -2,9 +2,23 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const User = require('../model/User');
 
 const AIController = {
   getAIStream: async (req, res) => {
+
+    const userId = req.user._id
+
+    const user = await User.findById(userId)
+
+    if(!user) {
+      return res.status(404).json({ msg: "Người dùng không tồn tại" });
+    }
+
+    if(user.plan.type !== "PLUS") {
+      return res.status(403).json({ msg: "Người dùng không có quyền truy cập" });
+    }
+
     const { userMessage } = req.body;
 
     // Đặt headers cho stream

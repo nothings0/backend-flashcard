@@ -44,7 +44,7 @@ const PricingController = {
       return res.status(201).json({
         success: true,
         message: "Pricing created successfully",
-        data: newPrice,
+        pricing: newPrice,
       });
     } catch (error) {
       next(new Error("Failed to create pricing"));

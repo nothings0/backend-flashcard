@@ -7,8 +7,10 @@ router
   .get(verifyToken, NotificationController.GetNotifi)
   .post(verifyAdmin, NotificationController.CreateNotifi)
   .patch(verifyToken, NotificationController.ReadNotifi)
-  .delete(verifyToken, NotificationController.DeleteNotifi);
 
+router
+  .route("/:id")
+  .delete(verifyToken, NotificationController.DeleteNotifi);
 router
   .route("/multiple")
   .post(verifyAdmin, NotificationController.CreateMultiple)

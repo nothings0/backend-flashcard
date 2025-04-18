@@ -115,13 +115,13 @@ const NotificationController = {
 
   DeleteNotifi: async (req, res, next) => {
     try {
-      const { _id } = req.body;
+      const { id: _id } = req.params;
 
       if (!_id) {
         return res.status(400).json({ msg: "Thiếu nội dung để xóa." });
       }
 
-      const result = await Notification.deleteMany({ _id });
+      const result = await Notification.deleteOne({ _id });
 
       res.status(200).json({ msg: "Đã xóa thông báo", deletedCount: result.deletedCount });
     } catch (error) {
