@@ -1,13 +1,14 @@
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
 const dotenv = require("dotenv");
-const cron = require("node-cron");
+// const axios = require("axios");
+// const cron = require("node-cron");
 // const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
 const cookies = require("cookie-parser");
 const fileUpload = require("express-fileupload");
+
 dotenv.config();
 require("./helper/connectRedis");
 
@@ -58,13 +59,10 @@ app.use(cookies());
 app.use(express.json({}));
 app.use(morgan("common"));
 // app.use(bodyParser.json({ limit: "50mb" }));
-app.use(
-  fileUpload({
-    useTempFiles: true,
-  })
-);
 
-app.use("/v1/auth", UserRoute);
+app.use("/v1/auth", fileUpload({
+  useTempFiles: true,
+}), UserRoute);
 app.use("/v1/card", CardRoute);
 app.use("/v1/notification", NotifiRoute);
 app.use("/v1/active", ActiveRoute);
@@ -78,6 +76,7 @@ app.use("/v1/invoice", InvoiceRoute);
 app.use("/v1/admin", AdminRoute);
 app.use("/v1/banner", BannerRoute);
 app.use("/v1/ai", AIRoute);
+
 
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
@@ -98,6 +97,7 @@ const connect = async () => {
     throw error;
   }
 };
+
 
 server.listen(process.env.PORT || 8000, () => {
   connect();

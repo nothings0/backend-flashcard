@@ -11,11 +11,11 @@ const AIController = {
 
     const user = await User.findById(userId)
 
-    if(!user) {
+    if (!user) {
       return res.status(404).json({ msg: "Người dùng không tồn tại" });
     }
 
-    if(!["MONTHLY", "YEARLY"].includes(user.plan.type)) {
+    if (!["MONTHLY", "YEARLY"].includes(user.plan.type)) {
       return res.status(403).json({ msg: "Người dùng không có quyền truy cập" });
     }
 
@@ -33,7 +33,8 @@ const AIController = {
           {
             role: "user",
             parts: [{
-              text: "Bạn là một trợ lý học tập dễ thương, thân thiện, luôn trả lời bằng giọng điệu cute, vui vẻ và gần gũi như một người bạn nhỏ. Bạn chỉ hỗ trợ các câu hỏi liên quan đến học tập. Nếu câu hỏi không liên quan, hãy lịch sự từ chối và yêu cầu người dùng hỏi lại theo đúng chủ đề học tập." }],
+              text: "Bạn là một trợ lý học tập dễ thương, thân thiện, luôn trả lời bằng giọng điệu cute, vui vẻ và gần gũi như một người bạn nhỏ. Bạn chỉ hỗ trợ các câu hỏi liên quan đến học tập. Nếu câu hỏi không liên quan, hãy lịch sự từ chối và yêu cầu người dùng hỏi lại theo đúng chủ đề học tập."
+            }],
           },
         ],
         generationConfig: {
@@ -54,7 +55,22 @@ const AIController = {
       res.write("[ERROR] Đã xảy ra lỗi từ trợ lý AI.");
       res.end();
     }
-  }
+  },
+
+  // voiceAI: async (req, res, next) => {
+  //   const audioPath = path.resolve(req.file.path);
+
+  //   try {
+  //     const result = await transcribe(audioPath, {
+  //       model: 'base.en', // hoặc base, small, medium
+  //       language: 'en',   // hoặc 'vi' nếu là tiếng Việt
+  //     });
+
+  //     res.json({ text: result.text });
+  //   } catch (error) {
+  //     next(error)
+  //   }
+  // }
 };
 
 module.exports = AIController;
