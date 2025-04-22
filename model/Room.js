@@ -11,6 +11,10 @@ const RoomSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    current: {
+      type: Number,
+      default: 0
+    },
     members: [
       {
         id: String,
@@ -23,6 +27,19 @@ const RoomSchema = new mongoose.Schema(
       required: true,
       default: "waiting",
     },
+    questions: [
+      {
+        prompt: String,
+        learn: [
+          {
+            answerTxt: String,
+            answerId: String,
+          }
+        ],
+        id: String,
+        startTime: Date
+      },
+    ],
   },
   { timestamps: true }
 );
