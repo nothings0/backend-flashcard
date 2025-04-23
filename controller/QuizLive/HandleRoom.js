@@ -55,6 +55,23 @@ module.exports = (socket, io) => {
       console.log(error);
     }
   };
+  const reJoinRoom = async (roomId) => {
+    try {
+      const room = await Room.findOne({ roomId: roomId.toUpperCase() });
+      if (room) {
+        socket.join(roomId);
+        let status = "success";
+        if (room.status === "running") {
+          status = "navigate";
+        }
+        io.to(socket.id).emit("joined-room", status);
+      } else {
+        io.to(socket.id).emit("error", "Không tồn tại phòng này!!!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const getMembers = async (roomId) => {
     try {
       const room = await Room.findOne({ roomId: roomId.toUpperCase() });
@@ -62,7 +79,7 @@ module.exports = (socket, io) => {
     } catch (error) {}
   };
 
-  function GetQuestions({ slug, roomId }) {
+  function sendQuestionForRoom({ slug, roomId }) {
     let currentQuestionStartTime = Date.now();
     setTimeout(async () => {
       currentQuestionStartTime = Date.now();
@@ -71,24 +88,59 @@ module.exports = (socket, io) => {
         ques,
         startTime: currentQuestionStartTime,
       };
+      // client.set(
+      //   roomId,
+      //   JSON.stringify(quizStore),
+      //   "EX",
+      //   TIME,
+      //   (err, reply) => {}
+      // );
 
       io.to(roomId).emit("quiz", quizStore);
     }, TIMEOUT);
   }
 
-  socket.on("next", ({ roomId }) => {
-    const room = rooms[roomId];
-    room.currentQuestion += 1;
-    if (room.currentQuestion < room.questions.length) {
-      io.to(roomId).emit("next-question", {
-        question: room.questions[room.currentQuestion],
-        index: room.currentQuestion
-      });
-    } else {
-      io.to(roomId).emit("game-over", room.scores);
-    }
-  });
+  const ReGetQuiz = (roomId) => {
+    // client.get(roomId, (err, quiz) => {
+    //   if (err) return;
+    //   ques = JSON.parse(quiz);
+    //   io.to(roomId).emit("quiz", ques);
+    // });
+  };
 
+  const getQuiz = async ({ slug, roomId, index }) => {
+    sendQuestionForRoom({ slug, roomId });
+    let idx = index;
+    let interval = setInterval(async () => {
+      if (idx > COUNT_QUES) {
+        const res = await Room.aggregate([
+          {
+            $match: { roomId },
+          },
+          {
+            $unwind: "$members",
+          },
+          {
+            $group: {
+              _id: "$members.id",
+              totalMark: { $sum: "$members.mark" },
+              name: { $first: "$members.name" },
+            },
+          },
+          {
+            $sort: { totalMark: -1 }, // Sắp xếp từ cao xuống thấp
+          },
+        ]);
+
+        io.to(roomId).emit("end-quiz", res);
+
+        clearInterval(interval);
+        return;
+      }
+      sendQuestionForRoom({ slug, roomId });
+      idx = idx + 1;
+    }, TIMEINTERVAL);
+  };
   const markQuiz = async ({ answer, id, roomId }) => {
     try {
       const result = await ProLearnController.getMark(answer, id);
@@ -115,10 +167,12 @@ module.exports = (socket, io) => {
   socket.on("create-room", creatRoom);
   socket.on("join-room", joinRoom);
   socket.on("get-members", getMembers);
+  socket.on("rejoin-room", reJoinRoom);
   socket.on("new-room", creatRoom);
   socket.on("get-quiz", getQuiz);
   socket.on("start", startQuiz);
   socket.on("get-mark-quiz", markQuiz);
+  socket.on("re-get-quiz", ReGetQuiz);
 };
 
 function generateRoomId(length = 6) {
