@@ -37,7 +37,8 @@ const ProLearnController = {
         ]);
       }
       const term = terms[0];
-      const audioLink = `https://dict.youdao.com/dictvoice?audio=${term.prompt}`;
+      // const audioLink = `https://dict.youdao.com/dictvoice?audio=${term.prompt}`;
+      const audioLink = `https://proxy.junookyo.workers.dev/?language=en-US&speed=1&text=${term.prompt}`;
 
       let ques = {
         term: {

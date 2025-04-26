@@ -16,7 +16,7 @@ const Pricing = new mongoose.Schema({
     },
     price: {
         type: Number,
-        dèault: 0
+        default: 0
     },
     discount: {
         type: Number,

@@ -54,8 +54,9 @@ const PricingController = {
   // Update a pricing record
   async updatePrice(req, res, next) {
     try {
-      const { title, description, type, price, discount, _id } = req.body;
-
+      const {id: _id} = req.params
+      const { title, description, type, price, discount } = req.body;
+      
       const pricing = await Pricing.findById(_id);
       
       if (!pricing) {
@@ -73,17 +74,18 @@ const PricingController = {
         return next(new Error("price cannot be negative"));
       }
 
-      await Pricing.updateOne({_id: _id}, {
+      const newPricing = await Pricing.findByIdAndUpdate(_id, {
         title: title || "", // Using default from schema if not provided
         description: description || "",
         type,
-        price: price || 0, // Optional, as schema doesn't require it
-        discount: discount || 0,
-      });
+        price: Number(price) || 0, // Optional, as schema doesn't require it
+        discount: Number(discount) || 0,
+      }, {new: true});
 
       return res.status(201).json({
         success: true,
         message: "Pricing updated successfully",
+        pricing: newPricing,
       });
     } catch (error) {
       next(new Error("Failed to update pricing"));

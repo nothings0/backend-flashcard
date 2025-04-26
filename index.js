@@ -1,8 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
-// const axios = require("axios");
-// const cron = require("node-cron");
+const axios = require("axios");
+const cron = require("node-cron");
 // const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const morgan = require("morgan");
@@ -18,8 +18,12 @@ const app = express();
 const server = require("http").createServer(app);
 const io = socketIo(server, {
   cors: {
-     origin: ["https://fluxquiz.netlify.app", "https://fluxquiz.vercel.app", "http://localhost:3000"],
- },
+    origin: [
+      "https://fluxquiz.netlify.app",
+      "https://fluxquiz.vercel.app",
+      "http://localhost:3000",
+    ],
+  },
 });
 app.use(
   cors({
@@ -27,7 +31,7 @@ app.use(
       "https://fluxquiz.netlify.app",
       "chrome-extension://ofnhhicnibhaanoobogcblgahdiaeodp",
       "https://fluxquiz.vercel.app",
-      "http://localhost:3000"
+      "http://localhost:3000",
     ],
     credentials: true,
   })
@@ -60,9 +64,13 @@ app.use(express.json({}));
 app.use(morgan("common"));
 // app.use(bodyParser.json({ limit: "50mb" }));
 
-app.use("/v1/auth", fileUpload({
-  useTempFiles: true,
-}), UserRoute);
+app.use(
+  "/v1/auth",
+  fileUpload({
+    useTempFiles: true,
+  }),
+  UserRoute
+);
 app.use("/v1/card", CardRoute);
 app.use("/v1/notification", NotifiRoute);
 app.use("/v1/active", ActiveRoute);
@@ -77,7 +85,6 @@ app.use("/v1/admin", AdminRoute);
 app.use("/v1/banner", BannerRoute);
 app.use("/v1/ai", AIRoute);
 
-
 app.use((err, req, res, next) => {
   const errorStatus = err.status || 500;
   const errorMessage = err.message || "Something went wrong!";
@@ -91,13 +98,25 @@ app.use((err, req, res, next) => {
 
 const connect = async () => {
   try {
-    await mongoose.connect(process.env.NODE_ENV === "production" ? process.env.DB_URL : process.env.DB_URL_LOCAL);
+    await mongoose.connect(
+      process.env.NODE_ENV === "production"
+        ? process.env.DB_URL
+        : process.env.DB_URL_LOCAL
+    );
     console.log("Connected to mongoDB.");
   } catch (error) {
     throw error;
   }
 };
 
+cron.schedule("*/12 * * * *", async () => {
+  try {
+    await axios("https://backend-kfnn.onrender.com/v1");
+    console.log("cron job");
+  } catch (error) {
+    console.error("Lỗi khi gọi API:", error);
+  }
+});
 
 server.listen(process.env.PORT || 8000, () => {
   connect();
@@ -109,13 +128,3 @@ const onConnection = (socket) => {
 };
 
 io.on("connection", onConnection);
-
-// cron.schedule("*/12 * * * *", async () => {
-//   try {
-//     const response = await axios("https://backend-kfnn.onrender.com");
-//     const data = await response.data;
-//     console.log(data);
-//   } catch (error) {
-//     console.error("Lỗi khi gọi API:", error);
-//   }
-// });
