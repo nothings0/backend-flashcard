@@ -608,6 +608,28 @@ const UserController = {
       next(err);
     }
   },
+  changePassword: async (req, res, next) => {
+    try {
+      const userId = req.user._id;
+      const {oldPassword, newPassword} = req.body.data;
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ msg: "User không tồn tại", code: 404 });
+      }
+      const validPassword = await bcrypt.compare(oldPassword, user.password);
+      if (!validPassword) {
+        return res
+          .status(400)
+          .json({ msg: "Mật khẩu cũ không chính xác", code: 400 });
+      }
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(newPassword, salt);
+      await User.findByIdAndUpdate(userId, { password: hashed });
+      return res.status(200).json({ msg: "Đổi mật khẩu thành công", code: 200 });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 
 const loginUser = async (user, password, res, next) => {

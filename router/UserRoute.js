@@ -17,6 +17,7 @@ router.put("/user/:userId", verifyToken, UserController.updateUser);
 router.post("/refreshToken", UserController.reqRefreshToken);
 router.post("/forgotPassword", UserController.forgotPassword);
 router.put("/resetPassword", verifyToken, UserController.resetPassword);
+router.put("/changePassword", verifyToken, UserController.changePassword);
 router.post("/logout", verifyToken, UserController.logout);
 router.post("/active", UserController.activeAccount);
 router.post("/admin/add-user", UserController.adminAddUser);
