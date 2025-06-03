@@ -2,6 +2,14 @@ const Invoice = require("../model/Invoice");
 const User = require("../model/User");
 const crypto = require('crypto');
 
+const Pagination = (req) => {
+  let page = Number(req.query.page) * 1 || 1;
+  let limit = Number(req.query.limit) * 1 || 4;
+  let skip = (page - 1) * limit || 0;
+
+  return { page, limit, skip };
+};
+
 const PricingController = {
     async webhooksepay(req, res, next) {
         const { gateway, transactionDate, accountNumber, subAccount, transferAmount, content, id, description } = req.body;
@@ -147,6 +155,24 @@ const PricingController = {
             }
 
             return res.status(200).json({ invoice });
+        } catch (err) {
+            next(err);
+        }
+    },
+
+    async getInvoices(req, res, next) {
+        const { limit } = Pagination(req);
+        console.log(limit);
+        
+        try {
+            const invoices = await Invoice.find().limit(5)
+            console.log('invoices', invoices);
+            
+            if (invoices.length === 0) {
+                return res.status(404).json({ message: "Invoice not found" });
+            }
+
+            return res.status(200).json({ invoices });
         } catch (err) {
             next(err);
         }

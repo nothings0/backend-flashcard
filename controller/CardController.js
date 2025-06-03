@@ -23,7 +23,7 @@ const CardController = {
     try {
       const { title, description, share, background, term } = req.body;
       const userId = req.user._id;
-      await CardController.handleCreate(
+      const newCard = await CardController.handleCreate(
         title,
         description,
         share,
@@ -35,6 +35,7 @@ const CardController = {
       res.status(200).json({
         type: "success",
         des: "Tạo card thành công",
+        card: newCard
       });
     } catch (err) {
       next(err);
@@ -77,6 +78,8 @@ const CardController = {
         termCount++;
       }
       await Term.insertMany(terms, { ordered: true });
+
+      return newCard
     } catch (err) {
       next(err);
     }
@@ -109,26 +112,28 @@ const CardController = {
   getAllCard: async (req, res, next) => {
     const query = req.query.q;
     let cards, count, title;
-    const { limit } = Pagination(req);
+    const { limit, skip } = Pagination(req);
     try {
       if (query) {
         if (query === "trend") {
           cards = await Card.find({ share: true })
             .populate("user", "username")
             .sort({ views: -1 })
+            .skip(skip)
             .limit(limit)
             .select("-password");
           const cnt = await Card.find({ share: true }).count();
-          count = cnt > 10 ? 10 : cnt;
+          count = cnt > 10 ? cnt : 10;
           title = "Phổ biến";
         } else if (query === "rate") {
           cards = await Card.find({ share: true })
             .populate("user", "username")
             .sort({ "rate.total": 1, "rate.quantity": 1 })
+            .skip(skip)
             .limit(limit)
             .select("-password");
           const cnt = await Card.find({ share: true }).count();
-          count = cnt > 10 ? 10 : cnt;
+          count = cnt > 10 ? cnt : 10;
           title = "Đánh giá cao";
         } else if (query === "saved") {
           const { userId } = req.query;
@@ -172,15 +177,16 @@ const CardController = {
             { $sample: { size: limit } },
           ]);
           const cnt = await Card.find({ share: true }).count();
-          count = cnt > 10 ? 10 : cnt;
+          count = cnt > 10 ? cnt : 10;
           title = "Đề xuất";
         } else if (query === "library") {
           const { userId } = req.query;
-          cards = await Card.find({ user: userId })
-            .populate("user", "username -_id")
+          console.log(limit);
+          
+          cards = await Card.find({ user: userId }).skip(skip)
             .limit(limit);
           const cnt = await Card.find({ user: userId }).count();
-          count = cnt > 10 ? 10 : cnt;
+          count = cnt > 10 ? cnt : 10;
           title = "Thư viện";
         }
         let total = 0;
@@ -354,6 +360,8 @@ const CardController = {
   },
   getCardById: async (req, res, next) => {
     const { slug } = req.params;
+    console.log(slug);
+    
     const { limit, skip } = Pagination(req);
     try {
       const cards = await Card.findOne({ slug }).populate("user", "username");

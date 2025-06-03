@@ -53,7 +53,7 @@ const AIController = {
             },
           ],
         },
-        ...context.slice(-10).map(msg => ({
+        ...context.slice(-6).map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.message }],
         })),
@@ -152,12 +152,11 @@ const AIController = {
           Hihi! Bạn là một trợ lý học tập siêu dễ thương đây! 😺 Hãy tạo một bộ flashcard cho việc học ngôn ngữ nha!
           - Ngôn ngữ: ${intentData.languagePair}.
           - Chủ đề: ${intentData.topic}.
-          - Số lượng từ: ${intentData.quantity || 5}.
+          - Số lượng từ: ${intentData.quantity || 15}.
           - Trả về đúng định dạng JSON (chỉ JSON, không thêm văn bản ngoài):
           {
             "title": "Tiêu đề bộ flashcard",
             "description": "Mô tả bộ flashcard, vui vẻ và dễ hiểu nha",
-            "backgroundImage": "URL ảnh nền phù hợp với chủ đề từ Unsplash (ví dụ: https://images.unsplash.com/...)",
             "terms": [
               { "prompt": "từ trong ngôn ngữ gốc", "answer": "dịch sang ngôn ngữ đích" },
               ...
@@ -193,7 +192,7 @@ const AIController = {
           user: userId,
           share: true,
           views: 5,
-          background: cardContent.backgroundImage || '',
+          background: 'linear-gradient(135deg, rgba(154,4,129,1) 0%, rgba(220,61,99,1) 50%, rgba(254,115,23,1) 100%)',
           type: 'REGULAR',
           rate: { total: 0, quantity: 0 },
         });
@@ -334,6 +333,81 @@ const AIController = {
     } catch (error) {
       console.error('Gemini stream error:', error);
       res.write('Ooops! Trợ lý AI bị lỗi xíu rồi, thử lại nha! 😿');
+      res.end();
+    }
+  },
+
+  generateTerms: async (req, res) => {
+    const userId = req.user._id;
+    const { title, existingPrompts = [] } = req.body;
+
+    // Validate user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: 'Người dùng không tồn tại nè! 😿' });
+    }
+
+    // Check subscription plan
+    if (!['MONTHLY', 'YEARLY'].includes(user.plan.type)) {
+      return res.status(403).json({
+        msg: 'Hihi, bạn cần nâng cấp gói MONTHLY hoặc YEARLY để dùng tính năng này nha! 😸',
+      });
+    }
+
+    // Validate title
+    if (!title || typeof title !== 'string' || title.trim() === '') {
+      return res.status(400).json({ msg: 'Hihi, bạn cần cung cấp tiêu đề hợp lệ nha! 😺' });
+    }
+
+    // Set headers for streaming
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      // Prompt to generate terms
+      const prompt = `
+        Hihi! Bạn là một trợ lý học tập siêu cute đây! 😺 
+        Hãy tạo một danh sách từ vựng cho bộ flashcard dựa trên tiêu đề: "${title}".
+        - Ngôn ngữ: English to Vietnamese (mặc định, trừ khi tiêu đề chỉ rõ ngôn ngữ khác).
+        - Số lượng: 11 đến 16 từ vựng (prompt và answer).
+        ${existingPrompts.length ? `- Không được trùng với các từ sau: ${existingPrompts.join(', ')}` : ''}
+        - Trả về từng từ vựng dưới dạng JSON riêng lẻ, mỗi JSON trên một dòng, không bao quanh bởi mảng:
+        {"prompt":"từ trong ngôn ngữ gốc","answer":"dịch sang ngôn ngữ đích"}
+        - Ví dụ:
+        {"prompt":"cat","answer":"con mèo"}
+        {"prompt":"dog","answer":"con chó"}
+        - Quan trọng: Chỉ trả về JSON, mỗi object trên một dòng, không thêm văn bản ngoài!
+      `;
+
+      const chatSession = model.startChat({
+        generationConfig: {
+          temperature: 0.4,
+          responseMimeType: 'text/plain',
+        },
+      });
+
+      const result = await chatSession.sendMessage(prompt);
+      const text = await result.response.text();
+      const lines = text.split('\n').filter(line => line.trim());
+
+      // Stream each term with a delay
+      for (const line of lines) {
+        try {
+          JSON.parse(line); // Validate JSON
+          res.write(line + '\n');
+          await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay between terms
+        } catch (e) {
+          console.error('Invalid JSON chunk:', line, e);
+          continue;
+        }
+      }
+
+      res.end();
+    } catch (error) {
+      console.error('Generate terms stream error:', error);
+      res.write('{"error":"Ooops! Trợ lý AI bị lỗi xíu rồi, thử lại nha! 😿"}');
       res.end();
     }
   },

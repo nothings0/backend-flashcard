@@ -74,7 +74,6 @@ const AdminController = {
           },
           { $group: { _id: null, totalCards: { $sum: 1 } } },
         ]).then((result) => {
-          console.log(`Card aggregation for ${period} (start: ${currentStartDate}, end: ${currentEndDate}):`, result);
           return result;
         }),
         // Current period: Invoices

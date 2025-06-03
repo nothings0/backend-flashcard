@@ -150,7 +150,7 @@ const TestController = {
         if (item.type === "learn" || item.type === 1) {
           if (item2.answer.toLowerCase() === item.answer.toLowerCase()) {
             if (user) {
-              TestController.handleRep(item2._id, item.card, user, next);
+              TestController.handleRep(item2._id, item.card, user, item.type, next);
             }
             respon.check = true;
             respon.correctAnswer = item2.answer;
@@ -165,7 +165,7 @@ const TestController = {
             item.answer.toLowerCase().trim()
           ) {
             if (user) {
-              TestController.handleRep(item2._id, item.card, user, next);
+              TestController.handleRep(item2._id, item.card, user, item.type, next);
             }
             respon.check = true;
             respon.correctAnswer = item.answer;
@@ -182,7 +182,7 @@ const TestController = {
       next(err);
     }
   },
-  handleRep: async (term, card, user, next) => {
+  handleRep: async (term, card, user, type, next) => {
     try {
       if (!user) {
         return;
@@ -194,7 +194,7 @@ const TestController = {
           status: 1,
           user,
           card,
-          type: "test",
+          type: type,
         });
         await newRep.save();
       } else {
