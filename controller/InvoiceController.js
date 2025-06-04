@@ -162,11 +162,9 @@ const PricingController = {
 
     async getInvoices(req, res, next) {
         const { limit } = Pagination(req);
-        console.log(limit);
         
         try {
             const invoices = await Invoice.find().limit(5)
-            console.log('invoices', invoices);
             
             if (invoices.length === 0) {
                 return res.status(404).json({ message: "Invoice not found" });
