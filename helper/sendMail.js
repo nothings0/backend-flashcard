@@ -1,25 +1,13 @@
 const nodemailer = require("nodemailer");
-const { OAuth2Client } = require("google-auth-library");
 require("dotenv").config();
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const REFRESH_TOKEN_MAIL = process.env.REFRESH_TOKEN_MAIL;
-const REDIRECT_URL = process.env.REDIRECT_URL;
 
 const sendMail = async (to, url, type) => {
-  const oAuth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
-  oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN_MAIL });
   try {
-    const access_token = await oAuth2Client.getAccessToken();
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        type: "OAuth2",
-        user: "sp.fluxquiz@gmail.com",
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET,
-        refreshToken: REFRESH_TOKEN_MAIL,
-        access_token,
+        user: process.env.EMAIL_USER,
+        pass: process.env.PASS_MAIL,
       },
     });
     if (type === "register") {

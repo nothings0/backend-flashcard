@@ -720,6 +720,12 @@ const dataBoard = {
   ],
 };
 const registerUser = async (newUser, res) => {
+  const userExist = await User.findOne({ username: newUser.username });
+
+  if (userExist) {
+    return res.status(400).json({ msg: "Tài khoản đã tồn tại", code: 400 });
+  }
+
   const user = new User(newUser);
   await user.save();
   const newAchieve = new Achieve({ user: user._id });

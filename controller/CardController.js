@@ -470,7 +470,7 @@ const CardController = {
   },
   getPendingPlus: async (req, res, next) => {
     try {
-      const cards = await Card.find({ type: "pending" });
+      const cards = await Card.find({ type: "pending".toUpperCase() });
       res.status(200).json({ code: 200, msg: "success", data: cards });
     } catch (error) {
       next(error);
