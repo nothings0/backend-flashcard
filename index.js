@@ -96,6 +96,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.get("/v1/ping", (_, res) => {
+  return res.send("pong");
+});
+
 const connect = async () => {
   try {
     await mongoose.connect(
@@ -109,9 +113,9 @@ const connect = async () => {
   }
 };
 
-cron.schedule("*/12 * * * *", async () => {
+cron.schedule("*/7 * * * *", async () => {
   try {
-    await axios("https://backend-kfnn.onrender.com/v1");
+    await axios("https://backend-kfnn.onrender.com/v1/ping");
     console.log("cron job");
   } catch (error) {
     console.error("Lỗi khi gọi API:", error);
