@@ -31,6 +31,9 @@ router
 router
   .route("/admin")
   .patch(verifyAdmin, CardController.updateCardAdmin)
+router
+  .route("/admin/:id")
+  .delete(verifyAdmin, CardController.AdminDeleteCard)
   
 router.route("/term").delete(CardController.deleteTerms);
 router.route("/delet-term/:termId").delete(CardController.deleteTerm);

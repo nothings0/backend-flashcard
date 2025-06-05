@@ -35,7 +35,7 @@ const CardController = {
       res.status(200).json({
         type: "success",
         des: "Tạo card thành công",
-        card: newCard
+        card: newCard,
       });
     } catch (err) {
       next(err);
@@ -79,7 +79,7 @@ const CardController = {
       }
       await Term.insertMany(terms, { ordered: true });
 
-      return newCard
+      return newCard;
     } catch (err) {
       next(err);
     }
@@ -182,9 +182,8 @@ const CardController = {
         } else if (query === "library") {
           const { userId } = req.query;
           console.log(limit);
-          
-          cards = await Card.find({ user: userId }).skip(skip)
-            .limit(limit);
+
+          cards = await Card.find({ user: userId }).skip(skip).limit(limit);
           const cnt = await Card.find({ user: userId }).count();
           count = cnt > 10 ? cnt : 10;
           title = "Thư viện";
@@ -252,7 +251,7 @@ const CardController = {
             _id: 1,
             slug: 1,
             type: 1,
-            password: -1
+            password: -1,
           },
         },
         { $sample: { size: limit } },
@@ -328,8 +327,10 @@ const CardController = {
   getCardsOfUser: async (req, res, next) => {
     try {
       const userId = req.user._id;
-      const cards = await Card.find({ user: userId }, { title: 1, _id: 1 })
-      .select("-password");
+      const cards = await Card.find(
+        { user: userId },
+        { title: 1, _id: 1 }
+      ).select("-password");
       res.status(200).json(cards);
     } catch (error) {
       next(error);
@@ -361,7 +362,7 @@ const CardController = {
   getCardById: async (req, res, next) => {
     const { slug } = req.params;
     console.log(slug);
-    
+
     const { limit, skip } = Pagination(req);
     try {
       const cards = await Card.findOne({ slug }).populate("user", "username");
@@ -447,8 +448,8 @@ const CardController = {
     }
   },
   updateCardAdmin: async (req, res, next) => {
-    const {data} = req.body;
-    
+    const { data } = req.body;
+
     try {
       const card = await Card.findOne({ slug: data.slug });
       if (!card) {
@@ -508,7 +509,8 @@ const CardController = {
     const { decision } = req.body;
     try {
       const card = await Card.findOne({ slug: slug });
-      let content = "", title;
+      let content = "",
+        title;
       if (decision === "regular") {
         title = `Nâng cấp thẻ không thành công`;
         content = `Card không đủ điều kiện để nâng cấp. Vui lòng chỉnh sửa phù hợp với chính sách của chúng tôi trước khi gửi yêu cầu lại`;
@@ -520,7 +522,7 @@ const CardController = {
         content = `Card đã được nâng cấp PRO thành công.`;
       }
       await card.updateOne({ $set: { type: decision } });
-      const notifi = new Notification({title, content, user: card.user });
+      const notifi = new Notification({ title, content, user: card.user });
       await notifi.save();
       res.status(200).json({ code: 200, msg: content });
     } catch (error) {
@@ -565,52 +567,58 @@ const CardController = {
   },
   search: async (req, res, next) => {
     const query = req.params.q?.trim();
-  
-    if (!query) return res.status(400).json({ message: "Thiếu từ khoá tìm kiếm." });
-  
+
+    if (!query)
+      return res.status(400).json({ message: "Thiếu từ khoá tìm kiếm." });
+
     try {
       const regex = new RegExp(query, "i");
-  
+
       const [cardRegex, cardText, userRegex, userText] = await Promise.all([
         Card.find({
           $or: [
             { title: { $regex: regex } },
-            { description: { $regex: regex } }
-          ]
+            { description: { $regex: regex } },
+          ],
         }).limit(5),
-  
+
         Card.find({ $text: { $search: query } }).limit(5),
-  
+
         User.find({
-          $or: [
-            { username: { $regex: regex } },
-            { email: { $regex: regex } }
-          ]
+          $or: [{ username: { $regex: regex } }, { email: { $regex: regex } }],
         }).limit(5),
-  
+
         User.find({ $text: { $search: query } }).limit(5),
       ]);
-  
+
       // Gộp và loại trùng bằng Map hoặc Set nếu cần
-      const cards = [...new Map([...cardRegex, ...cardText].map(item => [item._id.toString(), item])).values()];
-      const users = [...new Map([...userRegex, ...userText].map(item => [item._id.toString(), item])).values()];
-  
+      const cards = [
+        ...new Map(
+          [...cardRegex, ...cardText].map((item) => [item._id.toString(), item])
+        ).values(),
+      ];
+      const users = [
+        ...new Map(
+          [...userRegex, ...userText].map((item) => [item._id.toString(), item])
+        ).values(),
+      ];
+
       const data = [];
-  
+
       if (cards.length > 0) {
         data.push({ title: "Khóa học", data: cards.slice(0, 5) });
       }
-  
+
       if (users.length > 0) {
         data.push({ title: "Người dùng", data: users.slice(0, 5) });
       }
-  
+
       res.status(200).json(data);
     } catch (err) {
       next(err);
     }
   },
-  
+
   rateCard: async (req, res, next) => {
     const { slug } = req.params;
     const { rateNum } = req.body;
@@ -650,8 +658,8 @@ const CardController = {
       const card = await Card.findOne({ slug });
       const user = await User.findById(userId);
       if (card.user.valueOf() === userId || user.isAdmin) {
-        await card.deleteOne();
         await Term.deleteMany({ cardId: card._id });
+        await card.deleteOne();
         res.status(200).json({
           type: "success",
           msg: "Xóa thành công",
@@ -663,6 +671,21 @@ const CardController = {
           msg: "Bạn không thể xóa học phần này",
         });
       }
+    } catch (err) {
+      next(err);
+    }
+  },
+  AdminDeleteCard: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const card = await Card.findOne({ _id: id });
+      await Term.deleteMany({ cardId: card._id });
+      await CardSaved.findOneAndDelete({ card: id });
+      await card.deleteOne();
+      res.status(200).json({
+        type: "success",
+        msg: "Xóa thành công",
+      });
     } catch (err) {
       next(err);
     }
@@ -757,39 +780,39 @@ const CardController = {
     try {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
-      const search = req.query.search || '';
-  
+      const search = req.query.search || "";
+
       const skip = (page - 1) * limit;
-  
+
       // Tạo query tìm kiếm nếu có search
       const searchQuery = search
         ? {
             $or: [
-              { title: { $regex: search, $options: 'i' } },
-              { content: { $regex: search, $options: 'i' } }
-            ]
+              { title: { $regex: search, $options: "i" } },
+              { content: { $regex: search, $options: "i" } },
+            ],
           }
         : {};
-  
+
       const total = await Card.countDocuments(searchQuery);
-  
+
       const cards = await Card.find(searchQuery)
-        .populate('user', 'username')
+        .populate("user", "username")
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 });
-  
+
       res.status(200).json({
         cards,
         currentPage: page,
         totalPages: Math.ceil(total / limit),
-        totalItems: total
+        totalItems: total,
       });
     } catch (error) {
       next(error);
     }
   },
-  
+
   createCardAdmin: async (req, res, next) => {
     try {
       const { title, description, json, background, type } = req.body;
@@ -806,9 +829,11 @@ const CardController = {
         title,
         description: description,
         user: userId,
-        background: background ? background : "linear-gradient(45deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%)",
+        background: background
+          ? background
+          : "linear-gradient(45deg, #4158D0 0%, #C850C0 46%, #FFCC70 100%)",
         type: type ? type : "regular",
-        slug
+        slug,
       });
       await newCard.save();
       let termCount = await Term.find({ cardId: newCard._id }).count();

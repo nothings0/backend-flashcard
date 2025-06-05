@@ -633,6 +633,13 @@ const UserController = {
 };
 
 const loginUser = async (user, password, res, next) => {
+  if (user.isBlock) {
+    return res.status(400).json({
+      msg: "Tài khoản của bạn đã bị khóa, vui lòng liên hệ admin để biết thêm chi tiết",
+      code: 400,
+    });
+  }
+
   const validPassword = await bcrypt.compare(password, user.password);
   if (!validPassword) {
     return res
