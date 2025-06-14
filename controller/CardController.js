@@ -21,7 +21,7 @@ const Pagination = (req) => {
 const CardController = {
   createCard: async (req, res, next) => {
     try {
-      const { title, description, share, background, term } = req.body;
+      const { title, description, share, background, term, language } = req.body;
       const userId = req.user._id;
       const newCard = await CardController.handleCreate(
         title,
@@ -29,6 +29,7 @@ const CardController = {
         share,
         background,
         term,
+        language,
         userId,
         next
       );
@@ -47,6 +48,7 @@ const CardController = {
     share,
     background,
     term,
+    language,
     userId,
     next
   ) => {
@@ -62,6 +64,7 @@ const CardController = {
         share,
         background,
         user: userId,
+        lang: language || "en-US",
         slug,
       });
       await newCard.save();
@@ -90,7 +93,7 @@ const CardController = {
       const userId = req.user._id;
       const card = await Card.findOne({ title });
       if (!card) {
-        CardController.handleCreate(title, "", true, "", term, userId, next);
+        CardController.handleCreate(title, "", true, "", term, "en-US",userId, next);
       } else {
         let termCount = await Term.find({ slug: card.slug }).count();
         const newTerm = new Term({

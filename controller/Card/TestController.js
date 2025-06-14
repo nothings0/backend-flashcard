@@ -107,7 +107,7 @@ const TestController = {
         newQuestion.push(ques);
       }
       shuffle(newQuestion);
-      res.status(200).json({ question: newQuestion });
+      res.status(200).json({ question: newQuestion, lang: card.lang });
     } catch (err) {
       next(err);
     }

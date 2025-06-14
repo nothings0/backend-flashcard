@@ -50,7 +50,11 @@ const CardSchema = new mongoose.Schema(
     password: {
       type: String,
       default: "",
-    }
+    },
+    lang: {
+      type: String,
+      default: "en-US",
+    },
   },
   { timestamps: true }
 );
