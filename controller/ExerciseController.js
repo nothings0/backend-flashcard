@@ -8,7 +8,7 @@ const ExerciseController = {
   // Create a new exercise
   createExercise: async (req, res, next) => {
     try {
-      const {youtube_url} = req.body;
+      const {youtube_url, level} = req.body;
 
       const resp = await axios.post(API_YOUTUBE_INFO, {youtube_url})
 
@@ -21,7 +21,7 @@ const ExerciseController = {
         strict: true,
       });
 
-      const exercise = new Exercise({...data, slug });
+      const exercise = new Exercise({...data, slug, level: level || "BEGINNER"});
 
       const savedExercise = await exercise.save();
       res.status(201).json({
