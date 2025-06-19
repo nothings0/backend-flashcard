@@ -14,14 +14,13 @@ const ExerciseController = {
 
       const data = resp.data.data;
 
-      console.log(data);
-      
       const slug = slugify(data.title, {
         lower: true,
         strict: true,
       });
 
-      const exercise = new Exercise({...data, slug, level: level || "BEGINNER"});
+      const thumbnail = data.thumbnail.replace("hqdefault.jpg", "hq720.jpg");
+      const exercise = new Exercise({...data, thumbnail, slug, level: level || "BEGINNER"});
 
       const savedExercise = await exercise.save();
       res.status(201).json({
