@@ -85,7 +85,7 @@ const ListenController = {
 
       for (const term of terms) {
         let ques = {
-          prompt: term.prompt,
+          prompt: `https://proxy.junookyo.workers.dev/?language=en-UK&speed=1&text=${term.prompt}`,
           answer: term.answer,
           l: term.prompt.length,
           _id: term._id,
