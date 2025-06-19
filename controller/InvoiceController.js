@@ -1,3 +1,4 @@
+const Affiliate = require("../model/Affiliate");
 const Invoice = require("../model/Invoice");
 const User = require("../model/User");
 const crypto = require('crypto');
@@ -72,6 +73,14 @@ const PricingController = {
                     endDate
                 };
                 await user.save();
+
+                if (invoice.referralCode) {
+                    const affiliate = await Affiliate.findOne({ referralCode: invoice.referralCode });
+                    if (affiliate) {
+                        affiliate.totalEarned = (affiliate.totalEarned || 0) + invoice.amount * affiliate.discount;
+                        await affiliate.save();
+                    }
+                }
             } else {
                 invoice.status = "FAILED";
                 await invoice.save();
@@ -85,7 +94,7 @@ const PricingController = {
 
     async createInvoice(req, res, next) {
         const userId = req.user._id;
-        const { planType, amount } = req.body;
+        const { planType, amount, referralCode } = req.body;
 
         if (!userId || !planType || !amount) {
             return res.status(400).json({ message: 'Thiếu thông tin bắt buộc.' });
@@ -119,9 +128,10 @@ const PricingController = {
                 transaction_date: null,
                 account_number: null,
                 sub_account: null,
+                referralCode: referralCode,
                 amount: amount,
                 code: code,
-                transaction_content: `Mua gói ${planType} bởi ${user.username}`,
+                transaction_content: `Mua gói bởi ${user.username}`,
                 description: `Đăng ký gói ${planType}`,
                 status: 'PENDING'
             });

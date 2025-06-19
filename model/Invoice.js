@@ -17,6 +17,10 @@ const InvoiceSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  referralCode: {
+    type: String,
+    default: ""
+  },
   amount: {
     type: Number,
     required: true,

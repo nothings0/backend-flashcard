@@ -5,12 +5,30 @@ const PricingController = {
   async getPrices(req, res, next) {
     try {
       const prices = await Pricing.find({})
-        .populate("price") // Populating the referenced Card model
-        .lean(); // Using lean for performance
       return res.status(200).json({
         success: true,
         data: prices,
         count: prices.length,
+      });
+    } catch (error) {
+      next(new Error("Failed to fetch prices"));
+    }
+  },
+  async getPrice(req, res, next) {
+    const { id } = req.params;
+    try {
+      const price = await Pricing.findById(id)
+
+      if (!price) {
+        return res.status(404).json({
+          success: false,
+          message: "Pricing not found",
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: price,
+        count: price.length,
       });
     } catch (error) {
       next(new Error("Failed to fetch prices"));

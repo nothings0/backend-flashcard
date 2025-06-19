@@ -52,6 +52,7 @@ const InvoiceRoute = require("./router/InvoiceRoute");
 const AdminRoute = require("./router/AdminRoute");
 const BannerRoute = require("./router/BannerRoute");
 const ExerciseRoute = require("./router/ExerciseRoute");
+const AffiliateRoute = require("./router/AffiliateRoute");
 const AIRoute = require("./router/AIRoute");
 
 // secure api
@@ -82,6 +83,8 @@ app.use("/v1/task", apiSecure, TaskRoute);
 
 app.use("/v1/pricing", PricingRoute);
 app.use("/v1/invoice", InvoiceRoute);
+app.use("/v1/affiliate", AffiliateRoute);
+
 app.use("/v1/admin", AdminRoute);
 app.use("/v1/banner", BannerRoute);
 app.use("/v1/exercise", ExerciseRoute);

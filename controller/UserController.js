@@ -18,6 +18,7 @@ const OAuthClient = new OAuth2Client(`${process.env.CLIENT_ID}`);
 const CLIENT_URL = "https://fluxquiz.vercel.app";
 const cloudinary = require("cloudinary");
 const BoardController = require("./Board/BoardController");
+const Affiliate = require("../model/Affiliate");
 
 cloudinary.config({
   cloud_name: "da9mt0m3u",
@@ -197,7 +198,8 @@ const UserController = {
       const user = await User.findOne(
         { username },
         { isAdmin: 0, password: 0 }
-      );
+      ).lean();
+      const affiliate = await Affiliate.findOne({ userId: user._id });
       const cards = await Card.find({ user: user._id }).limit(4);
       let achieve = await Achieve.findOne(
         { user: user._id },
@@ -229,7 +231,7 @@ const UserController = {
         ],
         targetRes: achieve.target,
       };
-      res.status(200).json({ user, cards, achieveRes });
+      res.status(200).json({ user: {...user, referralCode: affiliate?.referralCode || ''}, cards, achieveRes });
     } catch (error) {
       next(error);
     }
@@ -668,9 +670,26 @@ const loginUser = async (user, password, res, next) => {
       { username: user.username },
       { password: 0 }
     );
+
+    await createAffiliate(user._id);
     return res.status(200).json({ user: userPL, accessToken });
   }
 };
+
+async function createAffiliate(userId) {
+  const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+  const exists = await Affiliate.findOne({ referralCode });
+  if (exists) return createAffiliate(userId); // tránh trùng
+
+  const affiliate = new Affiliate({
+    userId,
+    referralCode
+  });
+
+  await affiliate.save();
+}
+
 const dataBoard = {
   board: {
     title: "Sắp xếp thời gian học tập!!!",
