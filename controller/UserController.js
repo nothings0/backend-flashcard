@@ -559,6 +559,8 @@ const UserController = {
           user: newUser._id,
         });
         await notifi.save();
+
+        await createAffiliate(newUser._id);
         loginUser(newUser, password, res, next);
       }
     } catch (err) {
@@ -606,6 +608,7 @@ const UserController = {
           user: newUser._id,
         });
         await notifi.save();
+        await createAffiliate(newUser._id);
         loginUser(newUser, password, res, next);
       }
     } catch (error) {
