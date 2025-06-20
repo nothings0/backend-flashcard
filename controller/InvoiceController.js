@@ -240,7 +240,7 @@ const PricingController = {
     const { limit } = Pagination(req);
 
     try {
-      const invoices = await Invoice.find().limit(5);
+      const invoices = await Invoice.find().sort({createdAt: -1}).limit(limit);
 
       if (invoices.length === 0) {
         return res.status(404).json({ message: "Invoice not found" });
