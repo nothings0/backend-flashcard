@@ -32,10 +32,8 @@ const PricingController = {
           return res.status(400).send("Missing required code | id fields");
         }
 
-        const codePayment = content.match(/SEVQR\s*(\d+)/)?.[1] || null;
+        const codePayment = content.match(/SEVQR\s+([A-Z0-9]+)/)?.[1] || null;
 
-        console.log("codePayment:", codePayment);
-        
         if (!codePayment) {
           return res.status(400).send("Missing codePayment");
         }
@@ -114,7 +112,7 @@ const PricingController = {
           return res.status(400).send("Missing required code | id fields");
         }
 
-        const codePayment = content.match(/SEVQR\s*(\d+)/)?.[1] || null;
+        const codePayment = content.match(/SEVQR\s+([A-Z0-9]+)/)?.[1] || null;
         if (!codePayment) {
           return res.status(400).send("Missing required codePayment");
         }
