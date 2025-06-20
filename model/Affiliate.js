@@ -19,6 +19,6 @@ const AffiliateSchema = new mongoose.Schema({
     type: Number,
     default: 0 // tổng tiền đã kiếm được từ affiliate
   }
-});
+}, {timestamps: true});
 
 module.exports = mongoose.model('Affiliate', AffiliateSchema);

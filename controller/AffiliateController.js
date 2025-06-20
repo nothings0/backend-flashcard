@@ -1,5 +1,8 @@
 const Affiliate = require("../model/Affiliate");
 const User = require("../model/User");
+const BankAccount = require("../model/BankAccount");
+const WithdrawalHistory = require("../model/WithdrawalHistory");
+const crypto = require("crypto");
 
 const AffiliateController = {
   // Get all affiliate records
@@ -55,6 +58,177 @@ const AffiliateController = {
       });
     } catch (error) {
       next(error);
+    }
+  },
+
+  async requestWithdrawal(req, res, next) {
+    try {
+      const userId = req.user._id;
+
+      const affiliate = await Affiliate.findOne({ userId });
+      if (!affiliate || affiliate.totalEarned < 10000) {
+        return res
+          .status(400)
+          .json({ error: "Bạn cần tối thiểu 10,000đ để rút tiền" });
+      }
+
+      const bankInfo = await BankAccount.findOne({ userId });
+      if (!bankInfo) {
+        return res.status(400).json({
+          error: "Vui lòng cập nhật thông tin ngân hàng trước khi rút tiền",
+        });
+      }
+
+      const code = crypto.randomBytes(3).toString("hex").toUpperCase();
+
+      const withdrawal = await WithdrawalHistory.create({
+        userId,
+        amount: affiliate.totalEarned,
+        code: code,
+        status: "PENDING",
+      });
+
+      // Trừ tạm số dư
+      affiliate.totalEarned = 0;
+      await affiliate.save();
+
+      res.status(201).json({
+        success: true,
+        message: "Yêu cầu rút tiền đã được gửi",
+        withdrawal,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getUserWithdrawals(req, res, next) {
+    try {
+      const userId = req.user._id;
+
+      const history = await WithdrawalHistory.find({ userId }).sort({
+        createdAt: -1,
+      });
+
+      return res.status(200).json({ data: history });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getRequestWithdrawal(req, res, next) {
+    const { id } = req.params;
+
+    try {
+      const invoice = await WithdrawalHistory.findById(id).lean();
+      if (!invoice) {
+        return res.status(404).json({ message: "Invoice not found" });
+      }
+
+      return res.status(200).json({ invoice });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getRequestWithdrawals(req, res, next) {
+    try {
+      const invoices = await WithdrawalHistory.aggregate([
+        {
+          $lookup: {
+            from: "bankaccounts",
+            let: { uid: "$userId" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$userId", "$$uid"] } } },
+              {
+                $project: {
+                  _id: 0,
+                  bankName: 1,
+                  bankAccountNumber: 1,
+                  fullName: 1,
+                },
+              },
+            ],
+            as: "bankAccount",
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            let: { uid: "$userId" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+              {
+                $project: {
+                  _id: 1,
+                  username: 1,
+                },
+              },
+            ],
+            as: "user",
+          },
+        },
+        { $unwind: "$user" },
+        {
+          $unwind: {
+            path: "$bankAccount",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $sort: { createdAt: -1 },
+        },
+      ]);
+
+      res.status(200).json({ invoices });
+    } catch (err) {
+      next(err);
+    }
+  },
+  async updateBankAccount(req, res, next) {
+    try {
+      const userId = req.user._id;
+      const { fullName, bankName, bankAccountNumber } = req.body;
+
+      if (!fullName || !bankName || !bankAccountNumber) {
+        return res.status(400).json({ error: "Thiếu thông tin ngân hàng" });
+      }
+
+      const updated = await BankAccount.findOneAndUpdate(
+        { userId },
+        { fullName, bankName, bankAccountNumber },
+        { upsert: true, new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Đã cập nhật thông tin ngân hàng",
+        bankAccount: updated,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getAffiliateInfo(req, res, next) {
+    try {
+      const userId = req.user._id; // đã đăng nhập
+
+      const affiliate = await Affiliate.findOne({ userId });
+      const bankAccount = await BankAccount.findOne({ userId });
+
+      if (!affiliate) {
+        return res
+          .status(404)
+          .json({ error: "Không tìm thấy thông tin affiliate" });
+      }
+
+      return res.status(200).json({
+        balance: affiliate.totalEarned || 0,
+        bankAccount: bankAccount || null,
+      });
+    } catch (err) {
+      next(err);
     }
   },
 

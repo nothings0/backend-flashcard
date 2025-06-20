@@ -164,15 +164,15 @@ const UserController = {
       const limit = parseInt(req.query.limit) || 10;
       const skip = (page - 1) * limit;
 
-      const search = req.query.search || '';
+      const search = req.query.search || "";
 
       // Tạo điều kiện tìm kiếm (dùng $regex để tìm gần đúng, không phân biệt hoa thường)
       const searchQuery = {
         $or: [
-          { username: { $regex: search, $options: 'i' } },
-          { name: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
-        ]
+          { username: { $regex: search, $options: "i" } },
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+        ],
       };
 
       const total = await User.countDocuments(searchQuery);
@@ -186,7 +186,7 @@ const UserController = {
         users,
         currentPage: page,
         totalPages: Math.ceil(total / limit),
-        totalItems: total
+        totalItems: total,
       });
     } catch (error) {
       next(error);
@@ -231,7 +231,13 @@ const UserController = {
         ],
         targetRes: achieve.target,
       };
-      res.status(200).json({ user: {...user, referralCode: affiliate?.referralCode || ''}, cards, achieveRes });
+      res
+        .status(200)
+        .json({
+          user: { ...user, referralCode: affiliate?.referralCode || "" },
+          cards,
+          achieveRes,
+        });
     } catch (error) {
       next(error);
     }
@@ -299,18 +305,23 @@ const UserController = {
 
       const now = new Date();
 
-      if (user.plan?.endDate && user.plan.endDate < now && user.plan.type !== 'FREE') {
+      if (
+        user.plan?.endDate &&
+        user.plan.endDate < now &&
+        user.plan.type !== "FREE"
+      ) {
         user.plan = {
-          type: 'FREE',
+          type: "FREE",
           startDate: null,
-          endDate: null
+          endDate: null,
         };
         await user.save();
         return res.status(200).json({ msg: "Plan expired. Updated to FREE." });
       }
 
-      return res.status(200).json({ msg: "Plan is still valid. No update needed." });
-
+      return res
+        .status(200)
+        .json({ msg: "Plan is still valid. No update needed." });
     } catch (error) {
       next(error);
     }
@@ -322,27 +333,30 @@ const UserController = {
       const user = await User.findOne({ username });
 
       if (!user) {
-        return res.status(404).json({ msg: 'User not found' });
+        return res.status(404).json({ msg: "User not found" });
       }
       // check type of plan, if monthly or yearly, set startDate and endDate
-      plan.startDate = plan.startDate ? new Date(plan.startDate).toISOString() : new Date().toISOString();
+      plan.startDate = plan.startDate
+        ? new Date(plan.startDate).toISOString()
+        : new Date().toISOString();
       plan.endDate = (() => {
         const endDate = new Date();
-        if (plan.type === 'MONTHLY') {
+        if (plan.type === "MONTHLY") {
           endDate.setMonth(endDate.getMonth() + 1);
-        } else if (plan.type === 'YEARLY') {
+        } else if (plan.type === "YEARLY") {
           endDate.setFullYear(endDate.getFullYear() + 1);
         }
         return endDate.toISOString();
-      })()
+      })();
       user.name = name || user.name;
       user.plan = plan || user.plan;
       user.isBlock = isBlock !== undefined ? isBlock : user.isBlock;
 
       const updatedUser = await user.save();
 
-      return res.status(200).json({ msg: 'User updated successfully', user: updatedUser });
-
+      return res
+        .status(200)
+        .json({ msg: "User updated successfully", user: updatedUser });
     } catch (error) {
       next(error);
     }
@@ -377,7 +391,6 @@ const UserController = {
       await notifi.save();
       await BoardController.createBoard(dataBoard, saveUser._id);
       res.status(201).json({ msg: "Đăng ký tài khoản thành công!", code: 201 });
-
     } catch (error) {
       next(error);
     }
@@ -613,7 +626,7 @@ const UserController = {
   changePassword: async (req, res, next) => {
     try {
       const userId = req.user._id;
-      const {oldPassword, newPassword} = req.body.data;
+      const { oldPassword, newPassword } = req.body.data;
       const user = await User.findById(userId);
       if (!user) {
         return res.status(404).json({ msg: "User không tồn tại", code: 404 });
@@ -627,7 +640,9 @@ const UserController = {
       const salt = await bcrypt.genSalt(10);
       const hashed = await bcrypt.hash(newPassword, salt);
       await User.findByIdAndUpdate(userId, { password: hashed });
-      return res.status(200).json({ msg: "Đổi mật khẩu thành công", code: 200 });
+      return res
+        .status(200)
+        .json({ msg: "Đổi mật khẩu thành công", code: 200 });
     } catch (err) {
       next(err);
     }
@@ -671,7 +686,6 @@ const loginUser = async (user, password, res, next) => {
       { password: 0 }
     );
 
-    await createAffiliate(user._id);
     return res.status(200).json({ user: userPL, accessToken });
   }
 };
@@ -680,11 +694,11 @@ async function createAffiliate(userId) {
   const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   const exists = await Affiliate.findOne({ referralCode });
-  if (exists) return createAffiliate(userId); // tránh trùng
+  if (exists) return; // tránh trùng
 
   const affiliate = new Affiliate({
     userId,
-    referralCode
+    referralCode,
   });
 
   await affiliate.save();
@@ -762,6 +776,8 @@ const registerUser = async (newUser, res) => {
   });
   await notifi.save();
   await BoardController.createBoard(dataBoard, user._id);
+  await createAffiliate(user._id);
+
   res.status(201).json({ msg: "Đăng ký tài khoản thành công!", code: 201 });
 };
 
