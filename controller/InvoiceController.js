@@ -93,7 +93,7 @@ const PricingController = {
             if (affiliate) {
               affiliate.totalEarned =
                 (affiliate.totalEarned || 0) +
-                invoice.amount * affiliate.discount;
+                invoice.amount * (affiliate.discount / (100 - affiliate.discount));
               await affiliate.save();
             }
           }
