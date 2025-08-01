@@ -8,7 +8,7 @@ Website: https://fluxquiz.vercel.app (sleep 30s)
 
 * 📌 Xác thực, phân quyền người dùng
 * 📂 CRUD thẻ flashcard: tạo, cập nhật, xóa, lấy danh sách
-* 🧠 Các tính năng học tập: luyện ghi nhớ, luyện nghe, luyện nói, luyện viết, kiểm tra, space repition, shadowing
+* 🧠 Các tính năng học tập: luyện ghi nhớ, luyện nghe, luyện nói, luyện viết, kiểm tra, Spaced Repetition, shadowing
 * 🏦 Thanh toán online để nâng cấp tài khoản (SEPAY)
 * 🤖 Tích hợp AI vào các tính năng (tạo flashcard tự động, trò chuyện với AI)
 
@@ -63,13 +63,5 @@ backend-flashcard/
 ├— .env              # Biến môi trường
 ├— index.js          # Điểm bắt đầu của ứng dụng
 └— package.json
-
-> Một số route yêu cầu gửi `Authorization: Bearer <token>` trong header.
-
-## 📖 Gợi ý phát triển tiếp
-
-* Tính năng nhắc học lại theo thuật toán Spaced Repetition
-* Lưu lịch sử học tập và tiến độ
-* Tích hợp API phát âm hoặc dịch từ
 
 > Được phát triển bởi [nothings0](https://github.com/nothings0)
